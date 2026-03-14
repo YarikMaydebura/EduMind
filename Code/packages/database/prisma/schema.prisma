@@ -1,0 +1,1458 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// EDUMIND AI - Complete Database Schema
+// ═══════════════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================================================
+// ENUMS — Core
+// ============================================================================
+
+enum TenantType {
+  SCHOOL
+  PRIVATE_TUTOR
+}
+
+enum UserRole {
+  TECH_ADMIN
+  SCHOOL_ADMIN
+  TEACHER
+  STUDENT
+  PARENT
+}
+
+enum SubscriptionPlan {
+  FREE_TRIAL
+  TUTOR_BASIC
+  TUTOR_PRO
+  SCHOOL_BASIC
+  SCHOOL_PRO
+  ENTERPRISE
+}
+
+enum Subject {
+  // Core Academic
+  MATHEMATICS
+  ENGLISH
+  PHYSICS
+  CHEMISTRY
+  BIOLOGY
+  COMPUTER_SCIENCE
+  HISTORY
+  GEOGRAPHY
+  ECONOMICS
+  PSYCHOLOGY
+  SOCIOLOGY
+
+  // Languages
+  GERMAN
+  FRENCH
+  SPANISH
+  JAPANESE
+  CHINESE
+  RUSSIAN
+  LATIN
+  UKRAINIAN
+  DUTCH
+
+  // Arts
+  ART
+  MUSIC
+  DRAMA
+  DANCE
+  PHOTOGRAPHY
+
+  // Technical
+  ENGINEERING
+  ROBOTICS
+  WEB_DEVELOPMENT
+  APP_DEVELOPMENT
+  DATA_SCIENCE
+
+  // Business
+  ACCOUNTING
+  MARKETING
+  ENTREPRENEURSHIP
+
+  // Other
+  PHYSICAL_EDUCATION
+  HEALTH
+  PHILOSOPHY
+  RELIGIOUS_STUDIES
+}
+
+enum GradeYear {
+  GRADE_1
+  GRADE_2
+  GRADE_3
+  GRADE_4
+  GRADE_5
+  GRADE_6
+  GRADE_7
+  GRADE_8
+  GRADE_9
+  GRADE_10
+  GRADE_11
+  GRADE_12
+  UNIVERSITY_1
+  UNIVERSITY_2
+  UNIVERSITY_3
+  UNIVERSITY_4
+  ADULT
+}
+
+enum LessonStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum HomeworkStatus {
+  ASSIGNED
+  SUBMITTED
+  GRADED
+  RETURNED
+}
+
+enum QuizType {
+  DIAGNOSTIC
+  PRACTICE
+  TEST
+  EXAM
+  BOSS_BATTLE
+}
+
+enum AchievementRarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  LEGENDARY
+  MYTHIC
+}
+
+enum NotificationType {
+  LESSON_REMINDER
+  HOMEWORK_ASSIGNED
+  HOMEWORK_GRADED
+  QUIZ_AVAILABLE
+  ACHIEVEMENT_UNLOCKED
+  LEVEL_UP
+  MESSAGE
+  SYSTEM
+  PARENT_ALERT
+}
+
+enum ActivityType {
+  LESSON_COMPLETED
+  HOMEWORK_SUBMITTED
+  QUIZ_COMPLETED
+  ACHIEVEMENT_UNLOCKED
+  LEVEL_UP
+  STREAK_MILESTONE
+  RANK_UP
+}
+
+enum AvatarStyle {
+  CYBERPUNK
+  FANTASY
+  COSMIC
+  NATURE
+  STEAMPUNK
+  MINIMAL
+}
+
+enum ThemePreference {
+  DARK_MODERN
+  PLAYFUL_COLORFUL
+  CORPORATE_PROFESSIONAL
+  WARM_FRIENDLY
+  SYSTEM
+}
+
+// ============================================================================
+// ENUMS — Battle System
+// ============================================================================
+
+enum Theme {
+  FANTASY
+  CYBERPUNK_THEME
+  MILITARY
+  SCI_FI
+  ANIME
+  STEAMPUNK_THEME
+}
+
+enum ClassRarity {
+  CLASS_COMMON
+  CLASS_UNCOMMON
+  CLASS_RARE
+  CLASS_EPIC
+  CLASS_LEGENDARY
+  CLASS_MYTHIC
+}
+
+enum SkillRarity {
+  SKILL_COMMON
+  SKILL_UNCOMMON
+  SKILL_RARE
+  SKILL_EPIC
+  SKILL_LEGENDARY
+  SKILL_MYTHIC
+}
+
+enum SkillType {
+  PHYSICAL
+  MAGIC
+  HYBRID
+  HEAL
+  BUFF
+  DEBUFF
+  STATUS
+  UTILITY
+  ULTIMATE
+}
+
+enum BattleType {
+  PVP
+  PVE_DUNGEON
+  FRIENDLY
+  BOSS_RAID
+}
+
+enum BattleStatus {
+  BATTLE_IN_PROGRESS
+  BATTLE_COMPLETED
+  BATTLE_DRAW
+  BATTLE_CANCELLED
+}
+
+enum ItemType {
+  CONSUMABLE
+  WEAPON
+  ARMOR
+  ACCESSORY
+  SKILL_BOOK
+  COSMETIC
+  SPECIAL
+}
+
+enum ItemRarity {
+  ITEM_COMMON
+  ITEM_UNCOMMON
+  ITEM_RARE
+  ITEM_EPIC
+  ITEM_LEGENDARY
+}
+
+// ============================================================================
+// TENANT & USER
+// ============================================================================
+
+model Tenant {
+  id   String     @id @default(cuid())
+  type TenantType
+  name String
+  slug String     @unique
+  logo String?
+
+  // Settings
+  settings Json     @default("{}")
+  features String[] @default([])
+
+  // Subscription
+  plan              SubscriptionPlan @default(FREE_TRIAL)
+  subscriptionId    String?
+  trialEndsAt       DateTime?
+  subscriptionEndsAt DateTime?
+
+  // Limits
+  maxStudents       Int       @default(5)
+  maxTeachers       Int       @default(1)
+  aiRequestsLimit   Int       @default(100)
+  aiRequestsUsed    Int       @default(0)
+  aiRequestsResetAt DateTime?
+
+  // Relations
+  users   User[]
+  classes Class[]
+  invites Invite[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([plan])
+}
+
+model User {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Auth
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String?
+
+  // OAuth
+  microsoftId String? @unique
+  googleId    String? @unique
+
+  // Profile
+  role      UserRole
+  firstName String
+  lastName  String
+  avatar    String?
+  phone     String?
+  timezone  String @default("UTC")
+  language  String @default("en")
+
+  // Preferences
+  theme         ThemePreference @default(SYSTEM)
+  notifications Json            @default("{}")
+
+  // Status
+  isActive     Boolean   @default(true)
+  lastActiveAt DateTime?
+
+  // Role-specific profiles
+  teacherProfile Teacher?
+  studentProfile Student?
+  parentProfile  Parent?
+  schoolAdmin    SchoolAdmin?
+
+  // Relations
+  sessions         Session[]
+  sentMessages     Message[]        @relation("SentMessages")
+  receivedMessages Message[]        @relation("ReceivedMessages")
+  userNotifications Notification[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([email])
+  @@index([role])
+}
+
+model Session {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  token     String @unique
+  userAgent String?
+  ipAddress String?
+
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+// ============================================================================
+// ROLE-SPECIFIC PROFILES
+// ============================================================================
+
+model SchoolAdmin {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  permissions       Json    @default("{}")
+  canViewFinancials Boolean @default(true)
+  canManageStaff    Boolean @default(true)
+  canManageSettings Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Teacher {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  subjects        Subject[]
+  qualifications  String[]
+  bio             String?
+  yearsExperience Int?
+
+  isPrivateTutor Boolean  @default(false)
+  hourlyRate     Decimal? @db.Decimal(10, 2)
+
+  preferences Json @default("{}")
+
+  classes   Class[]
+  lessons   Lesson[]
+  homeworks Homework[]
+  quizzes   Quiz[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Student {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Academic info
+  gradeYear   GradeYear
+  dateOfBirth DateTime?
+
+  // Gamification — Global
+  totalXp        Int       @default(0)
+  overallLevel   Int       @default(1)
+  currentGrade   String    @default("E")
+  streakDays     Int       @default(0)
+  longestStreak  Int       @default(0)
+  lastActivityAt DateTime?
+
+  // Avatar & Customization
+  avatarUrl         String?
+  avatarStyle       AvatarStyle @default(FANTASY)
+  profileFrame      String?
+  badges            String[]    @default([])
+  title             String?
+
+  // Privacy
+  profileVisibility String  @default("class")
+  showOnLeaderboard Boolean @default(true)
+  showAchievements  Boolean @default(true)
+  showStats         Boolean @default(true)
+
+  // Relations
+  classEnrollments   ClassEnrollment[]
+  classProfiles      StudentClassProfile[]
+  homeworkSubmissions HomeworkSubmission[]
+  quizResults        QuizResult[]
+  achievements       StudentAchievement[]
+  activityFeed       ActivityFeed[]
+  followers          StudentFollow[]  @relation("Following")
+  following          StudentFollow[]  @relation("Followers")
+  parents            ParentStudent[]
+
+  // Battle system
+  battleCharacter BattleCharacter?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([gradeYear])
+  @@index([totalXp])
+}
+
+model Parent {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  alertOnLowGrade Boolean @default(true)
+  alertOnMissedHw Boolean @default(true)
+  alertOnAbsence  Boolean @default(true)
+  weeklyDigest    Boolean @default(true)
+
+  children ParentStudent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ParentStudent {
+  id        String @id @default(cuid())
+  parentId  String
+  parent    Parent @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  verified   Boolean   @default(false)
+  verifiedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([parentId, studentId])
+}
+
+// ============================================================================
+// CLASSES & ENROLLMENT
+// ============================================================================
+
+model Class {
+  id        String @id @default(cuid())
+  tenantId  String
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  name            String
+  subject         Subject
+  gradeYear       GradeYear
+  description     String?
+
+  lessonsPerWeek  Int     @default(2)
+  defaultDuration Int     @default(45)
+
+  settings   Json    @default("{}")
+  isArchived Boolean @default(false)
+
+  learningPlan    LearningPlan?
+  enrollments     ClassEnrollment[]
+  studentProfiles StudentClassProfile[]
+  lessons         Lesson[]
+  homeworks       Homework[]
+  quizzes         Quiz[]
+  invites         Invite[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([teacherId])
+  @@index([subject])
+}
+
+model ClassEnrollment {
+  id        String @id @default(cuid())
+  classId   String
+  class     Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  isActive Boolean   @default(true)
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime?
+
+  @@unique([classId, studentId])
+  @@index([classId])
+  @@index([studentId])
+}
+
+model StudentClassProfile {
+  id        String @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classId   String
+  class     Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  classXp    Int    @default(0)
+  classLevel Int    @default(1)
+  classGrade String @default("E")
+
+  skills Json @default("{}")
+
+  lessonsCompleted  Int    @default(0)
+  homeworkCompleted Int    @default(0)
+  quizzesCompleted  Int    @default(0)
+  averageScore      Float?
+
+  lessonStreak   Int @default(0)
+  homeworkStreak Int @default(0)
+
+  aiInsights        Json?
+  insightsUpdatedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, classId])
+  @@index([studentId])
+  @@index([classId])
+  @@index([classXp])
+}
+
+// ============================================================================
+// LEARNING & LESSONS
+// ============================================================================
+
+model LearningPlan {
+  id      String @id @default(cuid())
+  classId String @unique
+  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  title          String
+  description    String?
+  targetLevel    String?
+  totalWeeks     Int
+  lessonsPerWeek Int
+
+  generatedByAi Boolean   @default(false)
+  aiModel       String?
+  generatedAt   DateTime?
+
+  phases    Json     @default("[]")
+  textbooks String[] @default([])
+  resources Json     @default("[]")
+
+  currentPhase Int @default(1)
+  currentWeek  Int @default(1)
+
+  teacherNotes   String?
+  lastReviewedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Lesson {
+  id        String @id @default(cuid())
+  classId   String
+  class     Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+  topic       String
+
+  scheduledAt DateTime
+  duration    Int          @default(45)
+  status      LessonStatus @default(SCHEDULED)
+
+  recurringId String?
+
+  lessonPlan LessonPlan?
+  homeworks  Homework[]
+  quizzes    Quiz[]
+  attendance LessonAttendance[]
+
+  teacherNotes    String?
+  studentFeedback Json?
+
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([classId])
+  @@index([teacherId])
+  @@index([scheduledAt])
+  @@index([status])
+}
+
+model LessonPlan {
+  id       String @id @default(cuid())
+  lessonId String @unique
+  lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  generatedByAi Boolean   @default(false)
+  aiModel       String?
+  generatedAt   DateTime?
+
+  structure    Json     @default("{}")
+  materials    Json     @default("[]")
+  objectives   String[] @default([])
+  targetSkills Json     @default("{}")
+
+  aiTips       String?
+  teacherEdits Json?
+  exportedPdf  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LessonAttendance {
+  id       String @id @default(cuid())
+  lessonId String
+  lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  studentId String
+
+  present  Boolean   @default(true)
+  joinedAt DateTime?
+  leftAt   DateTime?
+
+  participationScore Int?
+  notes              String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([lessonId, studentId])
+}
+
+// ============================================================================
+// HOMEWORK & QUIZZES
+// ============================================================================
+
+model Homework {
+  id        String @id @default(cuid())
+  classId   String
+  class     Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  lessonId  String?
+  lesson    Lesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+
+  title        String
+  description  String
+  instructions String?
+
+  generatedByAi Boolean @default(false)
+  aiModel       String?
+
+  assignedAt DateTime @default(now())
+  dueAt      DateTime
+
+  maxScore       Int @default(100)
+  passingScore   Int @default(60)
+  baseXpReward   Int @default(30)
+  bonusXpPerfect Int @default(20)
+
+  attachments Json @default("[]")
+
+  submissions HomeworkSubmission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([classId])
+  @@index([dueAt])
+}
+
+model HomeworkSubmission {
+  id         String @id @default(cuid())
+  homeworkId String
+  homework   Homework @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  content     String?
+  attachments Json     @default("[]")
+  submittedAt DateTime @default(now())
+
+  status     HomeworkStatus @default(SUBMITTED)
+  score      Int?
+  percentage Float?
+
+  teacherFeedback String?
+  aiFeedback      String?
+  aiSuggestions   Json?
+
+  xpEarned Int     @default(0)
+  isLate   Boolean @default(false)
+
+  gradedAt DateTime?
+  gradedBy String?
+
+  @@unique([homeworkId, studentId])
+  @@index([studentId])
+  @@index([status])
+}
+
+model Quiz {
+  id        String @id @default(cuid())
+  classId   String
+  class     Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  lessonId  String?
+  lesson    Lesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+
+  title       String
+  description String?
+  type        QuizType @default(PRACTICE)
+
+  generatedByAi Boolean @default(false)
+  aiModel       String?
+  difficulty    Int     @default(50)
+
+  questions      Json    @default("[]")
+  totalQuestions Int     @default(0)
+  totalPoints    Int     @default(100)
+
+  timeLimit          Int?
+  shuffleQuestions   Boolean @default(true)
+  showCorrectAnswers Boolean @default(true)
+  allowRetakes       Boolean @default(false)
+  maxAttempts        Int     @default(1)
+
+  availableFrom  DateTime?
+  availableUntil DateTime?
+
+  baseXpReward   Int @default(50)
+  bonusXpPerfect Int @default(50)
+
+  isBossBattle Boolean @default(false)
+  bossName     String?
+  bossImage    String?
+
+  results QuizResult[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([classId])
+  @@index([type])
+}
+
+model QuizResult {
+  id        String @id @default(cuid())
+  quizId    String
+  quiz      Quiz    @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  attemptNumber  Int @default(1)
+  score          Int
+  percentage     Float
+  correctAnswers Int
+  totalQuestions Int
+
+  answers Json @default("[]")
+
+  startedAt   DateTime
+  completedAt DateTime?
+  timeSpent   Int?
+
+  skillsGained Json?
+  xpEarned     Int     @default(0)
+  bossDefeated Boolean?
+
+  createdAt DateTime @default(now())
+
+  @@index([quizId])
+  @@index([studentId])
+  @@index([percentage])
+}
+
+// ============================================================================
+// GAMIFICATION
+// ============================================================================
+
+model Achievement {
+  id String @id @default(cuid())
+
+  name                    String
+  nameTranslations        Json   @default("{}")
+  description             String
+  descriptionTranslations Json   @default("{}")
+
+  icon    String
+  image   String?
+
+  category String
+  rarity   AchievementRarity @default(COMMON)
+  subject  Subject?
+
+  conditionType  String
+  conditionValue Int
+  conditionExtra Json?
+
+  xpReward     Int     @default(50)
+  unlocksTitle String?
+  unlocksFrame String?
+  unlocksBadge String?
+
+  isHidden Boolean @default(false)
+  isActive Boolean @default(true)
+
+  students StudentAchievement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([rarity])
+  @@index([subject])
+}
+
+model StudentAchievement {
+  id            String @id @default(cuid())
+  studentId     String
+  student       Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  classId String?
+
+  progress    Int       @default(0)
+  progressMax Int?
+
+  unlockedAt DateTime?
+  isUnlocked Boolean   @default(false)
+  notified   Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@unique([studentId, achievementId, classId])
+  @@index([studentId])
+  @@index([isUnlocked])
+}
+
+model ActivityFeed {
+  id        String @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  type        ActivityType
+  title       String
+  description String?
+
+  relatedType String?
+  relatedId   String?
+
+  icon     String?
+  color    String?
+  xpGained Int?
+
+  isPublic Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  @@index([studentId])
+  @@index([createdAt])
+  @@index([isPublic])
+}
+
+model StudentFollow {
+  id          String @id @default(cuid())
+  followerId  String
+  follower    Student @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   Student @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+model LeaderboardEntry {
+  id        String @id @default(cuid())
+  studentId String
+
+  scope        String
+  period       String
+
+  rank         Int
+  previousRank Int?
+  xp           Int
+  level        Int
+
+  calculatedAt DateTime @default(now())
+
+  @@unique([studentId, scope, period])
+  @@index([scope, period, rank])
+}
+
+// ============================================================================
+// COMMUNICATION
+// ============================================================================
+
+model Notification {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type    NotificationType
+  title   String
+  message String
+
+  relatedType String?
+  relatedId   String?
+  actionUrl   String?
+
+  read   Boolean   @default(false)
+  readAt DateTime?
+
+  pushSent   Boolean   @default(false)
+  pushSentAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+}
+
+model Message {
+  id         String @id @default(cuid())
+  senderId   String
+  sender     User   @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User   @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  content     String
+  attachments Json @default("[]")
+
+  read   Boolean   @default(false)
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdAt])
+}
+
+model Invite {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  classId  String?
+  class    Class?  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  code      String   @unique
+  role      UserRole
+  email     String?
+
+  maxUses   Int @default(1)
+  usedCount Int @default(0)
+
+  expiresAt   DateTime
+  createdById String
+
+  createdAt DateTime @default(now())
+
+  @@index([code])
+  @@index([classId])
+}
+
+// ============================================================================
+// CALENDAR
+// ============================================================================
+
+model CalendarEvent {
+  id     String @id @default(cuid())
+  userId String
+
+  title       String
+  description String?
+
+  startAt DateTime
+  endAt   DateTime
+  allDay  Boolean @default(false)
+
+  isRecurring    Boolean @default(false)
+  recurrenceRule String?
+
+  lessonId   String?
+  homeworkId String?
+  quizId     String?
+
+  googleEventId  String?
+  outlookEventId String?
+
+  reminders Json @default("[]")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([startAt])
+}
+
+// ============================================================================
+// AI & ANALYTICS
+// ============================================================================
+
+model AiGenerationLog {
+  id       String @id @default(cuid())
+  tenantId String
+  userId   String
+
+  type  String
+  model String
+
+  inputTokens  Int
+  outputTokens Int
+  totalTokens  Int
+
+  costUsd Decimal @db.Decimal(10, 6)
+
+  latencyMs Int
+
+  success      Boolean
+  errorMessage String?
+
+  cacheHit Boolean @default(false)
+  cacheKey String?
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model StudentAiProfile {
+  id        String @id @default(cuid())
+  studentId String @unique
+
+  learningStyle       String?
+  strengthAreas       String[] @default([])
+  weaknessAreas       String[] @default([])
+  preferredDifficulty Int      @default(50)
+
+  peakHours            Json?
+  averageSessionLength Int?
+  completionRate       Float?
+
+  conversationContext Json?
+
+  lastAnalyzedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================================================
+// BATTLE SYSTEM — Character Classes
+// ============================================================================
+
+model CharacterClass {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  theme       Theme
+  rarity      ClassRarity
+  description String
+
+  passives    Json
+  abilities   Json?
+  requirements Json
+
+  evolvesFromId String?
+  evolvesFrom   CharacterClass?  @relation("ClassEvolution", fields: [evolvesFromId], references: [id])
+  evolvesTo     CharacterClass[] @relation("ClassEvolution")
+
+  exclusiveSkills Skill[]
+  characters      BattleCharacter[]
+
+  iconUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([theme])
+  @@index([rarity])
+}
+
+// ============================================================================
+// BATTLE SYSTEM — Battle Character
+// ============================================================================
+
+model BattleCharacter {
+  id        String  @id @default(cuid())
+  studentId String  @unique
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  classId String
+  class   CharacterClass @relation(fields: [classId], references: [id])
+  theme   Theme
+
+  hp     Int @default(100)
+  maxHp  Int @default(100)
+  mp     Int @default(50)
+  maxMp  Int @default(50)
+  sta    Int @default(50)
+  maxSta Int @default(50)
+  atk    Int @default(10)
+  def    Int @default(10)
+  spd    Int @default(10)
+  lck    Int @default(5)
+
+  battlesWon     Int @default(0)
+  battlesLost    Int @default(0)
+  battlesDraw    Int @default(0)
+  mobsDefeated   Int @default(0)
+  bossesDefeated Int @default(0)
+
+  knowledgePoints Int @default(0)
+
+  pvpBattlesToday Int      @default(0)
+  lastBattleAt    DateTime?
+  lastDailyReset  DateTime @default(now())
+
+  equippedSkills CharacterSkill[]
+  inventory      CharacterItem[]
+
+  weaponId    String?
+  armorId     String?
+  accessoryId String?
+
+  battlesAsPlayer1 Battle[] @relation("Player1Battles")
+  battlesAsPlayer2 Battle[] @relation("Player2Battles")
+  wonBattles       Battle[] @relation("WonBattles")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([classId])
+  @@index([theme])
+}
+
+// ============================================================================
+// BATTLE SYSTEM — Skills
+// ============================================================================
+
+model Skill {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String
+  type        SkillType
+  rarity      SkillRarity
+
+  mpCost  Int @default(0)
+  staCost Int @default(0)
+
+  power    Int @default(100)
+  hitCount Int @default(1)
+  cooldown Int @default(0)
+
+  effects          Json
+  unlockConditions Json
+
+  exclusiveToClass CharacterClass? @relation(fields: [exclusiveClassId], references: [id])
+  exclusiveClassId String?
+
+  primarySubject String?
+
+  characterSkills CharacterSkill[]
+
+  iconUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+  @@index([rarity])
+  @@index([primarySubject])
+}
+
+model CharacterSkill {
+  id          String          @id @default(cuid())
+  characterId String
+  character   BattleCharacter @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  skillId     String
+  skill       Skill           @relation(fields: [skillId], references: [id])
+
+  isEquipped   Boolean @default(false)
+  equipSlot    Int?
+
+  masteryLevel Int @default(1)
+  masteryXp    Int @default(0)
+
+  unlockedAt DateTime @default(now())
+
+  @@unique([characterId, skillId])
+  @@index([characterId])
+  @@index([skillId])
+}
+
+// ============================================================================
+// BATTLE SYSTEM — Items
+// ============================================================================
+
+model Item {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String
+  type        ItemType
+  rarity      ItemRarity
+
+  price Int
+
+  effects      Json
+  requirements Json?
+
+  consumable Boolean @default(false)
+  tradeable  Boolean @default(true)
+
+  characterItems CharacterItem[]
+
+  inShop    Boolean @default(true)
+  shopLimit Int?
+
+  iconUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+  @@index([rarity])
+}
+
+model CharacterItem {
+  id          String          @id @default(cuid())
+  characterId String
+  character   BattleCharacter @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  itemId      String
+  item        Item            @relation(fields: [itemId], references: [id])
+
+  quantity   Int     @default(1)
+  isEquipped Boolean @default(false)
+  equipSlot  String?
+
+  acquiredAt DateTime @default(now())
+
+  @@unique([characterId, itemId])
+  @@index([characterId])
+  @@index([itemId])
+}
+
+// ============================================================================
+// BATTLE SYSTEM — Battles
+// ============================================================================
+
+model Battle {
+  id     String       @id @default(cuid())
+  type   BattleType
+  status BattleStatus @default(BATTLE_IN_PROGRESS)
+
+  player1Id String
+  player1   BattleCharacter  @relation("Player1Battles", fields: [player1Id], references: [id])
+  player2Id String?
+  player2   BattleCharacter? @relation("Player2Battles", fields: [player2Id], references: [id])
+
+  aiOpponent Json?
+
+  winnerId String?
+  winner   BattleCharacter? @relation("WonBattles", fields: [winnerId], references: [id])
+
+  player1Stats Json
+  player2Stats Json
+
+  battleLog Json @default("[]")
+
+  currentTurn Int @default(1)
+  maxTurns    Int @default(30)
+
+  rewards Json?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([player1Id])
+  @@index([player2Id])
+  @@index([winnerId])
+  @@index([type])
+  @@index([status])
+}
+
+// ============================================================================
+// BATTLE SYSTEM — Shop & Economy
+// ============================================================================
+
+model ShopTransaction {
+  id          String @id @default(cuid())
+  characterId String
+  itemId      String
+
+  quantity Int
+  totalKp  Int
+
+  purchasedAt DateTime @default(now())
+
+  @@index([characterId])
+  @@index([itemId])
+  @@index([purchasedAt])
+}
+
+// ============================================================================
+// BATTLE SYSTEM — Dungeons
+// ============================================================================
+
+model Dungeon {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String
+
+  difficulty       String
+  minLevel         Int
+  recommendedLevel Int
+
+  subjectTheme String?
+
+  waves Json
+  boss  Json?
+
+  rewards Json
+
+  cooldownMinutes Int  @default(0)
+  dailyLimit      Int?
+
+  completions DungeonCompletion[]
+
+  iconUrl   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([difficulty])
+  @@index([subjectTheme])
+}
+
+model DungeonCompletion {
+  id          String  @id @default(cuid())
+  characterId String
+  dungeonId   String
+  dungeon     Dungeon @relation(fields: [dungeonId], references: [id])
+
+  completed    Boolean
+  wavesCleared Int
+
+  kpEarned    Int
+  xpEarned    Int
+  itemsEarned Json?
+
+  completedAt DateTime @default(now())
+  duration    Int
+
+  @@index([characterId])
+  @@index([dungeonId])
+  @@index([completedAt])
+}
+
+// ============================================================================
+// BATTLE SYSTEM — History & Leaderboard
+// ============================================================================
+
+model ClassChangeHistory {
+  id          String @id @default(cuid())
+  characterId String
+
+  fromClassId String
+  toClassId   String
+
+  method String
+
+  changedAt DateTime @default(now())
+
+  @@index([characterId])
+  @@index([changedAt])
+}
+
+model BattleLeaderboard {
+  id          String @id @default(cuid())
+  characterId String
+
+  period      String
+  periodStart DateTime
+  periodEnd   DateTime?
+
+  rank        Int
+  battlesWon  Int
+  battlesLost Int
+  winRate     Float
+  totalDamage Int
+
+  calculatedAt DateTime @default(now())
+
+  @@unique([characterId, period, periodStart])
+  @@index([period])
+  @@index([rank])
+}

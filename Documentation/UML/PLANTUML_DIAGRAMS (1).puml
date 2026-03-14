@@ -1,0 +1,2872 @@
+' ═══════════════════════════════════════════════════════════════════════════════
+' EDUMIND AI - PlantUML Diagrams
+' Compatible with: https://www.planttext.com/
+' ═══════════════════════════════════════════════════════════════════════════════
+' 
+' HOW TO USE:
+' 1. Go to https://www.planttext.com/
+' 2. Copy ONE diagram at a time (from @startuml to @enduml)
+' 3. Paste and click "Refresh" to render
+'
+' ═══════════════════════════════════════════════════════════════════════════════
+
+
+' ╔═══════════════════════════════════════════════════════════════════════════════╗
+' ║ 1. ENTITY RELATIONSHIP DIAGRAM (ERD) - FULL DATABASE                          ║
+' ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+@startuml EduMind_ERD_Complete
+
+!define TABLE(x) entity x << (T,#FFAAAA) >>
+!define PRIMARY_KEY(x) <b><color:#b8860b><&key></color> x</b>
+!define FOREIGN_KEY(x) <color:#aaaaaa><&link-intact></color> x
+!define COLUMN(x) <color:#efefef><&media-record></color> x
+
+skinparam backgroundColor #1a1a2e
+skinparam entity {
+    BackgroundColor #16213e
+    BorderColor #0f3460
+    FontColor #e94560
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' TENANT & USER
+' ─────────────────────────────────────────────────────────────────────────────
+
+TABLE(Tenant) {
+    PRIMARY_KEY(id): UUID
+    COLUMN(type): TenantType
+    COLUMN(name): String
+    COLUMN(slug): String <<unique>>
+    COLUMN(plan): SubscriptionPlan
+    COLUMN(max_students): Int
+    COLUMN(ai_requests_used): Int
+    COLUMN(created_at): DateTime
+}
+
+TABLE(User) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(tenant_id): UUID
+    COLUMN(email): String <<unique>>
+    COLUMN(password_hash): String
+    COLUMN(role): UserRole
+    COLUMN(first_name): String
+    COLUMN(last_name): String
+    COLUMN(language): Language
+    COLUMN(theme): ThemePreference
+    COLUMN(last_active_at): DateTime
+}
+
+TABLE(Session) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(user_id): UUID
+    COLUMN(token): String
+    COLUMN(expires_at): DateTime
+    COLUMN(ip_address): String
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' ROLE PROFILES
+' ─────────────────────────────────────────────────────────────────────────────
+
+TABLE(Teacher) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(user_id): UUID <<unique>>
+    COLUMN(subjects): Subject[]
+    COLUMN(is_private_tutor): Boolean
+    COLUMN(preferences): JSON
+}
+
+TABLE(Student) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(user_id): UUID <<unique>>
+    COLUMN(grade_year): GradeYear
+    COLUMN(total_xp): Int
+    COLUMN(overall_level): Int
+    COLUMN(current_grade): Grade
+    COLUMN(streak_days): Int
+    COLUMN(avatar_url): String
+    COLUMN(avatar_style): AvatarStyle
+}
+
+TABLE(Parent) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(user_id): UUID <<unique>>
+    COLUMN(alert_on_low_grade): Boolean
+    COLUMN(weekly_digest): Boolean
+}
+
+TABLE(ParentStudent) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(parent_id): UUID
+    FOREIGN_KEY(student_id): UUID
+    COLUMN(verified): Boolean
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' CLASS & ENROLLMENT
+' ─────────────────────────────────────────────────────────────────────────────
+
+TABLE(Class) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(tenant_id): UUID
+    FOREIGN_KEY(teacher_id): UUID
+    COLUMN(name): String
+    COLUMN(subject): Subject
+    COLUMN(grade_year): GradeYear
+    COLUMN(lessons_per_week): Int
+    COLUMN(is_archived): Boolean
+}
+
+TABLE(ClassEnrollment) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(class_id): UUID
+    FOREIGN_KEY(student_id): UUID
+    COLUMN(is_active): Boolean
+    COLUMN(joined_at): DateTime
+}
+
+TABLE(StudentClassProfile) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(student_id): UUID
+    FOREIGN_KEY(class_id): UUID
+    COLUMN(class_xp): Int
+    COLUMN(class_level): Int
+    COLUMN(class_grade): Grade
+    COLUMN(skills): JSON
+}
+
+TABLE(Invite) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(tenant_id): UUID
+    FOREIGN_KEY(class_id): UUID
+    COLUMN(code): String <<unique>>
+    COLUMN(role): UserRole
+    COLUMN(max_uses): Int
+    COLUMN(used_count): Int
+    COLUMN(expires_at): DateTime
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' LEARNING CONTENT
+' ─────────────────────────────────────────────────────────────────────────────
+
+TABLE(LearningPlan) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(class_id): UUID <<unique>>
+    COLUMN(title): String
+    COLUMN(total_weeks): Int
+    COLUMN(phases): JSON
+    COLUMN(generated_by_ai): Boolean
+}
+
+TABLE(Lesson) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(class_id): UUID
+    FOREIGN_KEY(teacher_id): UUID
+    COLUMN(title): String
+    COLUMN(topic): String
+    COLUMN(scheduled_at): DateTime
+    COLUMN(duration): Int
+    COLUMN(status): LessonStatus
+}
+
+TABLE(LessonPlan) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(lesson_id): UUID <<unique>>
+    COLUMN(structure): JSON
+    COLUMN(materials): JSON
+    COLUMN(objectives): String[]
+    COLUMN(generated_by_ai): Boolean
+}
+
+TABLE(LessonAttendance) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(lesson_id): UUID
+    FOREIGN_KEY(student_id): UUID
+    COLUMN(present): Boolean
+    COLUMN(participation_score): Int
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' HOMEWORK & QUIZZES
+' ─────────────────────────────────────────────────────────────────────────────
+
+TABLE(Homework) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(class_id): UUID
+    FOREIGN_KEY(teacher_id): UUID
+    FOREIGN_KEY(lesson_id): UUID
+    COLUMN(title): String
+    COLUMN(due_at): DateTime
+    COLUMN(max_score): Int
+    COLUMN(base_xp_reward): Int
+    COLUMN(generated_by_ai): Boolean
+}
+
+TABLE(HomeworkSubmission) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(homework_id): UUID
+    FOREIGN_KEY(student_id): UUID
+    COLUMN(content): Text
+    COLUMN(status): SubmissionStatus
+    COLUMN(score): Int
+    COLUMN(teacher_feedback): Text
+    COLUMN(ai_feedback): Text
+    COLUMN(xp_earned): Int
+}
+
+TABLE(Quiz) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(class_id): UUID
+    FOREIGN_KEY(teacher_id): UUID
+    COLUMN(title): String
+    COLUMN(type): QuizType
+    COLUMN(questions): JSON
+    COLUMN(time_limit): Int
+    COLUMN(is_boss_battle): Boolean
+    COLUMN(generated_by_ai): Boolean
+}
+
+TABLE(QuizResult) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(quiz_id): UUID
+    FOREIGN_KEY(student_id): UUID
+    COLUMN(attempt_number): Int
+    COLUMN(score): Int
+    COLUMN(percentage): Float
+    COLUMN(answers): JSON
+    COLUMN(time_spent): Int
+    COLUMN(xp_earned): Int
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' GAMIFICATION
+' ─────────────────────────────────────────────────────────────────────────────
+
+TABLE(Achievement) {
+    PRIMARY_KEY(id): UUID
+    COLUMN(name): String
+    COLUMN(description): String
+    COLUMN(icon): String
+    COLUMN(category): AchievementCategory
+    COLUMN(rarity): AchievementRarity
+    COLUMN(condition_type): String
+    COLUMN(condition_value): Int
+    COLUMN(xp_reward): Int
+    COLUMN(is_hidden): Boolean
+}
+
+TABLE(StudentAchievement) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(student_id): UUID
+    FOREIGN_KEY(achievement_id): UUID
+    FOREIGN_KEY(class_id): UUID
+    COLUMN(progress): Int
+    COLUMN(is_unlocked): Boolean
+    COLUMN(unlocked_at): DateTime
+}
+
+TABLE(ActivityFeed) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(student_id): UUID
+    COLUMN(type): ActivityType
+    COLUMN(title): String
+    COLUMN(description): String
+    COLUMN(xp_gained): Int
+    COLUMN(is_public): Boolean
+    COLUMN(created_at): DateTime
+}
+
+TABLE(LeaderboardEntry) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(student_id): UUID
+    COLUMN(scope): String
+    COLUMN(period): LeaderboardPeriod
+    COLUMN(rank): Int
+    COLUMN(xp): Int
+    COLUMN(calculated_at): DateTime
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' COMMUNICATION
+' ─────────────────────────────────────────────────────────────────────────────
+
+TABLE(Notification) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(user_id): UUID
+    COLUMN(type): NotificationType
+    COLUMN(title): String
+    COLUMN(message): String
+    COLUMN(read): Boolean
+    COLUMN(action_url): String
+    COLUMN(created_at): DateTime
+}
+
+TABLE(Message) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(sender_id): UUID
+    FOREIGN_KEY(receiver_id): UUID
+    COLUMN(content): Text
+    COLUMN(read): Boolean
+    COLUMN(created_at): DateTime
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' AI LOGS
+' ─────────────────────────────────────────────────────────────────────────────
+
+TABLE(AiGenerationLog) {
+    PRIMARY_KEY(id): UUID
+    FOREIGN_KEY(tenant_id): UUID
+    FOREIGN_KEY(user_id): UUID
+    COLUMN(type): AiTaskType
+    COLUMN(model): String
+    COLUMN(input_tokens): Int
+    COLUMN(output_tokens): Int
+    COLUMN(cost_usd): Decimal
+    COLUMN(latency_ms): Int
+    COLUMN(success): Boolean
+    COLUMN(created_at): DateTime
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' RELATIONSHIPS
+' ─────────────────────────────────────────────────────────────────────────────
+
+Tenant ||--o{ User
+Tenant ||--o{ Class
+Tenant ||--o{ Invite
+Tenant ||--o{ AiGenerationLog
+
+User ||--o| Teacher
+User ||--o| Student
+User ||--o| Parent
+User ||--o{ Session
+User ||--o{ Notification
+User ||--o{ Message
+
+Teacher ||--o{ Class
+Teacher ||--o{ Lesson
+Teacher ||--o{ Homework
+Teacher ||--o{ Quiz
+
+Student ||--o{ ClassEnrollment
+Student ||--o{ StudentClassProfile
+Student ||--o{ HomeworkSubmission
+Student ||--o{ QuizResult
+Student ||--o{ StudentAchievement
+Student ||--o{ ActivityFeed
+Student ||--o{ LeaderboardEntry
+Student ||--o{ LessonAttendance
+
+Parent ||--o{ ParentStudent
+ParentStudent }o--|| Student
+
+Class ||--o{ ClassEnrollment
+Class ||--o{ StudentClassProfile
+Class ||--o{ Lesson
+Class ||--o{ Homework
+Class ||--o{ Quiz
+Class ||--o| LearningPlan
+Class ||--o{ Invite
+
+Lesson ||--o| LessonPlan
+Lesson ||--o{ LessonAttendance
+Lesson ||--o{ Homework
+Lesson ||--o{ Quiz
+
+Homework ||--o{ HomeworkSubmission
+Quiz ||--o{ QuizResult
+Achievement ||--o{ StudentAchievement
+
+@enduml
+
+
+' ╔═══════════════════════════════════════════════════════════════════════════════╗
+' ║ 2. USE CASE DIAGRAM                                                           ║
+' ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+@startuml EduMind_UseCase
+
+left to right direction
+skinparam backgroundColor #1a1a2e
+skinparam actorStyle awesome
+skinparam usecase {
+    BackgroundColor #16213e
+    BorderColor #0f3460
+    FontColor #ffffff
+}
+
+actor "Tech Admin" as TA #e94560
+actor "School Admin" as SA #f39c12
+actor Teacher as T #3498db
+actor Student as S #2ecc71
+actor Parent as P #9b59b6
+actor "AI System" as AI #1abc9c
+
+rectangle "Authentication" {
+    usecase "Register" as UC1
+    usecase "Login" as UC2
+    usecase "Microsoft OAuth" as UC3
+    usecase "Reset Password" as UC4
+}
+
+rectangle "Class Management" {
+    usecase "Create Class" as UC10
+    usecase "Generate Invite" as UC11
+    usecase "Join Class" as UC12
+    usecase "Manage Students" as UC13
+    usecase "Archive Class" as UC14
+}
+
+rectangle "Learning Content" {
+    usecase "Create Lesson" as UC20
+    usecase "Generate Learning Plan" as UC21
+    usecase "Generate Lesson Plan" as UC22
+    usecase "Start Lesson" as UC23
+    usecase "Track Attendance" as UC24
+}
+
+rectangle "Homework & Quizzes" {
+    usecase "Create Homework" as UC30
+    usecase "Generate Homework (AI)" as UC31
+    usecase "Submit Homework" as UC32
+    usecase "Grade Homework" as UC33
+    usecase "AI Check Homework" as UC34
+    usecase "Create Quiz" as UC35
+    usecase "Generate Quiz (AI)" as UC36
+    usecase "Take Quiz" as UC37
+    usecase "Boss Battle" as UC38
+}
+
+rectangle "Gamification" {
+    usecase "Earn XP" as UC40
+    usecase "Level Up" as UC41
+    usecase "Unlock Achievement" as UC42
+    usecase "View Leaderboard" as UC43
+    usecase "Customize Avatar" as UC44
+    usecase "Follow Classmates" as UC45
+}
+
+rectangle "AI Features" {
+    usecase "AI Student Tutor" as UC50
+    usecase "AI Progress Analysis" as UC51
+}
+
+rectangle "Communication" {
+    usecase "Send Message" as UC60
+    usecase "View Notifications" as UC61
+    usecase "Parent Alerts" as UC62
+}
+
+rectangle "Analytics" {
+    usecase "View Dashboard" as UC70
+    usecase "Class Analytics" as UC71
+    usecase "School Analytics" as UC72
+    usecase "Student Progress" as UC73
+}
+
+' Actor connections
+TA --> UC1
+TA --> UC2
+TA --> UC72
+
+SA --> UC2
+SA --> UC10
+SA --> UC71
+SA --> UC72
+
+T --> UC2
+T --> UC3
+T --> UC10
+T --> UC11
+T --> UC13
+T --> UC14
+T --> UC20
+T --> UC23
+T --> UC24
+T --> UC30
+T --> UC33
+T --> UC35
+T --> UC60
+T --> UC70
+T --> UC71
+
+S --> UC2
+S --> UC3
+S --> UC12
+S --> UC32
+S --> UC37
+S --> UC38
+S --> UC40
+S --> UC41
+S --> UC42
+S --> UC43
+S --> UC44
+S --> UC45
+S --> UC50
+S --> UC61
+S --> UC73
+
+P --> UC2
+P --> UC3
+P --> UC60
+P --> UC62
+P --> UC73
+
+AI --> UC21
+AI --> UC22
+AI --> UC31
+AI --> UC34
+AI --> UC36
+AI --> UC50
+AI --> UC51
+
+' Include/Extend relationships
+UC21 ..> AI : <<uses>>
+UC22 ..> AI : <<uses>>
+UC31 ..> AI : <<uses>>
+UC34 ..> AI : <<uses>>
+UC36 ..> AI : <<uses>>
+
+UC32 ..> UC40 : <<triggers>>
+UC37 ..> UC40 : <<triggers>>
+UC40 ..> UC41 : <<may trigger>>
+UC40 ..> UC42 : <<may trigger>>
+
+@enduml
+
+
+' ╔═══════════════════════════════════════════════════════════════════════════════╗
+' ║ 3. CLASS DIAGRAM - CORE DOMAIN                                                ║
+' ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+@startuml EduMind_ClassDiagram
+
+skinparam backgroundColor #1a1a2e
+skinparam class {
+    BackgroundColor #16213e
+    BorderColor #0f3460
+    FontColor #ffffff
+    AttributeFontColor #e94560
+    StereotypeFontColor #f39c12
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' ENUMS
+' ─────────────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+    TECH_ADMIN
+    SCHOOL_ADMIN
+    TEACHER
+    STUDENT
+    PARENT
+}
+
+enum Subject {
+    MATHEMATICS
+    ENGLISH
+    PHYSICS
+    CHEMISTRY
+    BIOLOGY
+    HISTORY
+    ...
+}
+
+enum Grade {
+    E
+    D
+    C
+    B
+    A
+    S
+    S_PLUS
+}
+
+enum AchievementRarity {
+    COMMON
+    UNCOMMON
+    RARE
+    EPIC
+    LEGENDARY
+    MYTHIC
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' CORE CLASSES
+' ─────────────────────────────────────────────────────────────────────────────
+
+abstract class User {
+    - id: UUID
+    - email: String
+    - passwordHash: String
+    - role: UserRole
+    - firstName: String
+    - lastName: String
+    - language: String
+    - theme: String
+    --
+    + login(): Session
+    + logout(): void
+    + updateProfile(): User
+    + changePassword(): void
+}
+
+class Teacher {
+    - id: UUID
+    - userId: UUID
+    - subjects: Subject[]
+    - isPrivateTutor: Boolean
+    --
+    + createClass(): Class
+    + createLesson(): Lesson
+    + assignHomework(): Homework
+    + createQuiz(): Quiz
+    + gradeSubmission(): void
+    + generateLessonPlan(): LessonPlan
+}
+
+class Student {
+    - id: UUID
+    - userId: UUID
+    - gradeYear: GradeYear
+    - totalXp: Int
+    - overallLevel: Int
+    - currentGrade: Grade
+    - streakDays: Int
+    - avatarUrl: String
+    --
+    + submitHomework(): HomeworkSubmission
+    + takeQuiz(): QuizResult
+    + earnXP(amount: Int): void
+    + levelUp(): void
+    + unlockAchievement(): StudentAchievement
+    + updateStreak(): void
+}
+
+class Parent {
+    - id: UUID
+    - userId: UUID
+    - alertOnLowGrade: Boolean
+    --
+    + viewChildProgress(): Report
+    + contactTeacher(): Message
+    + getAlerts(): Notification[]
+}
+
+class Class {
+    - id: UUID
+    - name: String
+    - subject: Subject
+    - gradeYear: GradeYear
+    - lessonsPerWeek: Int
+    - isArchived: Boolean
+    --
+    + generateInvite(): Invite
+    + addStudent(student: Student): void
+    + removeStudent(student: Student): void
+    + archive(): void
+    + getStats(): ClassStats
+}
+
+class Lesson {
+    - id: UUID
+    - title: String
+    - topic: String
+    - scheduledAt: DateTime
+    - duration: Int
+    - status: LessonStatus
+    --
+    + start(): void
+    + complete(): void
+    + trackAttendance(): void
+    + generatePlan(): LessonPlan
+}
+
+class Homework {
+    - id: UUID
+    - title: String
+    - dueAt: DateTime
+    - maxScore: Int
+    - baseXpReward: Int
+    --
+    + assignToClass(): void
+    + getSubmissions(): HomeworkSubmission[]
+    + checkWithAI(): AIFeedback
+}
+
+class Quiz {
+    - id: UUID
+    - title: String
+    - type: QuizType
+    - questions: Question[]
+    - timeLimit: Int
+    - isBossBattle: Boolean
+    --
+    + start(): QuizAttempt
+    + submit(): QuizResult
+    + calculateScore(): Int
+}
+
+class Achievement {
+    - id: UUID
+    - name: String
+    - description: String
+    - icon: String
+    - category: String
+    - rarity: AchievementRarity
+    - conditionType: String
+    - conditionValue: Int
+    - xpReward: Int
+    --
+    + checkCondition(student: Student): Boolean
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' SERVICES
+' ─────────────────────────────────────────────────────────────────────────────
+
+class XPCalculator <<service>> {
+    + calculateHomeworkXP(score, max, isLate): XPEvent
+    + calculateQuizXP(score, max, isBoss): XPEvent
+    + calculateStreakXP(days): XPEvent
+    + calculateLevel(xp): Int
+    + calculateGrade(level, hwAvg, quizAvg): Grade
+}
+
+class AIService <<service>> {
+    + generateLearningPlan(class): LearningPlan
+    + generateLessonPlan(lesson): LessonPlan
+    + generateQuiz(params): Quiz
+    + generateHomework(params): Homework
+    + checkHomework(submission): AIFeedback
+    + studentTutor(message): Response
+}
+
+class AchievementChecker <<service>> {
+    + checkAchievements(student, event): Achievement[]
+    + evaluateCondition(achievement, student): Boolean
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' RELATIONSHIPS
+' ─────────────────────────────────────────────────────────────────────────────
+
+User <|-- Teacher
+User <|-- Student
+User <|-- Parent
+
+Teacher "1" --> "*" Class : teaches
+Teacher "1" --> "*" Lesson : conducts
+Teacher "1" --> "*" Homework : assigns
+Teacher "1" --> "*" Quiz : creates
+
+Student "*" --> "*" Class : enrolled in
+Student "1" --> "*" Achievement : earns
+
+Parent "*" --> "*" Student : monitors
+
+Class "1" --> "*" Lesson : contains
+Class "1" --> "*" Homework : has
+Class "1" --> "*" Quiz : has
+
+Lesson ..> AIService : uses
+Homework ..> AIService : uses
+Quiz ..> AIService : uses
+
+Student ..> XPCalculator : uses
+Student ..> AchievementChecker : uses
+
+@enduml
+
+
+' ╔═══════════════════════════════════════════════════════════════════════════════╗
+' ║ 4. SEQUENCE DIAGRAM - COMPLETE QUIZ/EXERCISE SYSTEM                          ║
+' ║    Shows different types: Boss Battle, Quiz, Homework, Class Exercise, AI    ║
+' ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+' ─────────────────────────────────────────────────────────────────────────────
+' 4A. BOSS BATTLE (Major Exam/Midterm/Final) - HIGH XP
+' ─────────────────────────────────────────────────────────────────────────────
+
+@startuml EduMind_Sequence_BossBattle
+
+skinparam backgroundColor #1a1a2e
+skinparam sequence {
+    ParticipantBackgroundColor #16213e
+    ParticipantBorderColor #0f3460
+    ParticipantFontColor #ffffff
+    ActorBackgroundColor #e94560
+    ArrowColor #e74c3c
+    NoteBorderColor #f39c12
+    NoteBackgroundColor #2c3e50
+}
+
+title 👹 BOSS BATTLE - Major Exam (150-500 XP)
+
+actor Student as S
+participant "Frontend" as UI
+participant "API Server" as API
+database "Database" as DB
+participant "Gamification\nService" as GM
+participant "Achievement\nChecker" as AC
+
+note over S,AC #8B0000
+    **BOSS BATTLE** = Major exams only
+    • Midterm Exam
+    • Final Exam  
+    • Chapter Test
+    • Competition
+    
+    XP: 150-500 (based on score)
+    Special achievements available
+    Defeat required to "clear" the chapter
+end note
+
+S -> UI: Open Boss Battle
+activate UI
+
+UI -> API: GET /quizzes/{id}/start?type=BOSS
+activate API
+
+API -> DB: Get boss battle data
+DB --> API: Boss quiz (harder questions)
+
+API -> DB: Create attempt\n(boss_battle: true)
+DB --> API: Attempt ID
+
+API --> UI: Boss data + epic UI flag
+deactivate API
+
+UI --> S: 👹 **BOSS BATTLE START**\nEpic animation + music
+deactivate UI
+
+note over S,UI #2c3e50
+    Student completes boss battle
+    • Time pressure
+    • No hints allowed
+    • All questions required
+end note
+
+S -> UI: Submit boss battle
+activate UI
+
+UI -> API: POST /boss-battles/{attemptId}/submit
+activate API
+
+API -> API: Calculate score
+
+alt Score >= 60% (BOSS DEFEATED!)
+    API -> GM: Boss defeated!
+    activate GM
+    
+    GM -> DB: Award BOSS XP\n(150-500 based on score)
+    
+    note right of GM #228B22
+        **Boss XP Calculation:**
+        Base: 150 XP
+        + Perfect (100%): +200 XP
+        + First try: +50 XP
+        + Speed bonus: +50 XP
+        + No hints: +50 XP
+        ────────────────
+        Max: 500 XP
+    end note
+    
+    GM -> DB: Mark chapter as "cleared"
+    GM --> API: Boss defeated event
+    deactivate GM
+    
+    API -> AC: Check BOSS achievements
+    activate AC
+    
+    AC -> AC: Check conditions:\n• First Boss Defeat\n• Perfect Boss Kill\n• Speed Run Boss\n• No Damage (100%)
+    
+    opt Achievement unlocked
+        AC -> DB: Unlock achievement\n(Boss Slayer, etc.)
+        AC -> DB: Award bonus XP (200-500)
+        AC --> API: Achievement data
+    end
+    deactivate AC
+    
+    API --> UI: 🎉 BOSS DEFEATED!\n+ XP + achievements
+    UI --> S: Victory screen!\nEpic celebration animation
+    
+else Score < 60% (BOSS NOT DEFEATED)
+    API -> GM: Boss attempt failed
+    GM -> DB: Award consolation XP (50)
+    GM --> API: Try again
+    
+    API --> UI: Boss not defeated
+    UI --> S: "The boss is too strong!\nTrain more and try again"
+end
+
+deactivate API
+deactivate UI
+
+@enduml
+
+
+' ─────────────────────────────────────────────────────────────────────────────
+' 4B. REGULAR QUIZ (Weekly quiz) - MEDIUM XP
+' ─────────────────────────────────────────────────────────────────────────────
+
+@startuml EduMind_Sequence_RegularQuiz
+
+skinparam backgroundColor #1a1a2e
+skinparam sequence {
+    ParticipantBackgroundColor #16213e
+    ParticipantBorderColor #0f3460
+    ParticipantFontColor #ffffff
+    ActorBackgroundColor #3498db
+    ArrowColor #3498db
+}
+
+title ⚔️ REGULAR QUIZ - Weekly Test (30-125 XP)
+
+actor Student as S
+participant "Frontend" as UI
+participant "API Server" as API
+database "Database" as DB
+participant "Gamification" as GM
+
+note over S,GM #1a5276
+    **REGULAR QUIZ** = Weekly class quizzes
+    • Topic review quiz
+    • Chapter mini-test
+    • Pop quiz
+    
+    XP: 30-125 (based on score)
+    Like "Elite mobs" - harder than homework
+end note
+
+S -> UI: Start Quiz
+UI -> API: GET /quizzes/{id}/start
+API -> DB: Get quiz
+DB --> API: Quiz data
+API --> UI: Quiz questions
+UI --> S: Display quiz
+
+S -> UI: Submit answers
+UI -> API: POST /quizzes/{attemptId}/submit
+activate API
+
+API -> API: Calculate score
+
+API -> GM: Calculate quiz XP
+activate GM
+
+note right of GM
+    **Quiz XP Formula:**
+    Base: 30 XP
+    + Score bonus: (score% × 0.5) XP
+    + Perfect (100%): +25 XP
+    + First attempt: +15 XP
+    + On time: +10 XP
+    ────────────────
+    Range: 30-125 XP
+end note
+
+GM -> DB: Update student XP
+GM -> GM: Check level up
+
+opt Level Up
+    GM -> DB: Update level
+    GM --> API: Level up!
+end
+
+deactivate GM
+
+API --> UI: Quiz result + XP
+UI --> S: Show score & rewards
+
+@enduml
+
+
+' ─────────────────────────────────────────────────────────────────────────────
+' 4C. HOMEWORK (Daily tasks) - FARMING XP
+' ─────────────────────────────────────────────────────────────────────────────
+
+@startuml EduMind_Sequence_Homework
+
+skinparam backgroundColor #1a1a2e
+skinparam sequence {
+    ParticipantBackgroundColor #16213e
+    ParticipantBorderColor #0f3460
+    ParticipantFontColor #ffffff
+    ActorBackgroundColor #27ae60
+    ArrowColor #27ae60
+}
+
+title 🐗 HOMEWORK - Daily Farming (20-70 XP)
+
+actor Student as S
+participant "Frontend" as UI
+participant "API Server" as API
+database "Database" as DB
+participant "Gamification" as GM
+
+note over S,GM #1e8449
+    **HOMEWORK** = Regular assignments
+    • Daily practice
+    • Reading tasks
+    • Problem sets
+    • Essays
+    
+    XP: 20-70 XP
+    Like "farming mobs" - consistent small gains
+    Builds up over time!
+end note
+
+S -> UI: View homework list
+UI -> API: GET /homework/pending
+API -> DB: Get student's homework
+DB --> API: Homework list
+API --> UI: Pending assignments
+UI --> S: Show homework (5 pending)
+
+loop For each homework
+    S -> UI: Complete homework
+    S -> UI: Submit
+    
+    UI -> API: POST /homework/{id}/submit
+    activate API
+    
+    alt Submitted on time
+        API -> GM: Calculate XP (on-time)
+        GM -> DB: +25 XP (submission bonus)
+    else Submitted early (24h+)
+        API -> GM: Calculate XP (early)
+        GM -> DB: +35 XP (early bonus!)
+    else Submitted late
+        API -> GM: Calculate XP (late)
+        GM -> DB: +10 XP (late penalty)
+    end
+    
+    API --> UI: Submitted!
+    UI --> S: ✓ +25 XP
+    deactivate API
+end
+
+note over S #2c3e50
+    After grading:
+    Score 100%: +45 XP more
+    Score 90%: +35 XP more
+    Score 80%: +25 XP more
+    ─────────────────────
+    Total per HW: 20-70 XP
+end note
+
+@enduml
+
+
+' ─────────────────────────────────────────────────────────────────────────────
+' 4D. CLASS EXERCISE (In-class work) - QUICK XP
+' ─────────────────────────────────────────────────────────────────────────────
+
+@startuml EduMind_Sequence_ClassExercise
+
+skinparam backgroundColor #1a1a2e
+skinparam sequence {
+    ParticipantBackgroundColor #16213e
+    ParticipantBorderColor #0f3460
+    ParticipantFontColor #ffffff
+    ActorBackgroundColor #9b59b6
+    ArrowColor #9b59b6
+}
+
+title 🎯 CLASS EXERCISE - Daily Quest (10-30 XP)
+
+actor Student as S
+actor Teacher as T
+participant "Frontend" as UI
+participant "API Server" as API
+database "Database" as DB
+participant "Gamification" as GM
+
+note over S,GM #6c3483
+    **CLASS EXERCISE** = In-lesson activities
+    • Warm-up questions
+    • Practice problems
+    • Quick drills
+    • Participation
+    
+    XP: 10-30 XP
+    Like "daily quests" - quick & easy
+    Done during class time
+end note
+
+T -> UI: Start class exercise
+UI -> API: POST /lessons/{id}/exercise/start
+API -> DB: Create exercise session
+API --> UI: Exercise started
+UI --> T: Students can now participate
+
+S -> UI: Join exercise
+UI -> API: GET /exercises/{id}/join
+API --> UI: Exercise questions
+UI --> S: Show exercise (5 quick questions)
+
+S -> UI: Submit answers
+UI -> API: POST /exercises/{id}/submit
+activate API
+
+API -> API: Auto-grade (instant)
+
+API -> GM: Award participation XP
+activate GM
+
+note right of GM
+    **Class Exercise XP:**
+    Participation: +10 XP
+    Correct answers: +2 XP each
+    All correct: +5 bonus
+    ────────────────
+    Range: 10-30 XP
+end note
+
+GM -> DB: Update XP (instant)
+deactivate GM
+
+API --> UI: Results
+deactivate API
+UI --> S: Instant feedback!\n+18 XP ⚡
+
+@enduml
+
+
+' ─────────────────────────────────────────────────────────────────────────────
+' 4E. AI PRACTICE (Optional side quest) - BONUS XP
+' ─────────────────────────────────────────────────────────────────────────────
+
+@startuml EduMind_Sequence_AIPractice
+
+skinparam backgroundColor #1a1a2e
+skinparam sequence {
+    ParticipantBackgroundColor #16213e
+    ParticipantBorderColor #0f3460
+    ParticipantFontColor #ffffff
+    ActorBackgroundColor #f39c12
+    ArrowColor #f39c12
+}
+
+title 📜 AI PRACTICE - Side Quest (5-25 XP + Achievements)
+
+actor Student as S
+participant "Frontend" as UI
+participant "API Server" as API
+participant "AI Service\n(Claude)" as AI
+database "Database" as DB
+participant "Gamification" as GM
+participant "Achievement\nChecker" as AC
+
+note over S,AC #b7950b
+    **AI PRACTICE** = Self-study exercises
+    • Generated on demand
+    • Adaptive difficulty
+    • Optional (side quests)
+    • Can unlock special achievements!
+    
+    XP: 5-25 XP per exercise
+    Daily limit: 10 exercises
+    
+    Like "side quests" - optional but rewarding
+end note
+
+S -> UI: Request AI practice\n(Topic: Algebra)
+activate UI
+
+UI -> API: POST /ai/practice/generate
+activate API
+
+API -> AI: Generate practice problems
+activate AI
+
+AI -> AI: Analyze student level\nGenerate 5 questions\nAdaptive difficulty
+
+AI --> API: Generated questions
+deactivate AI
+
+API --> UI: AI practice ready
+deactivate API
+UI --> S: 🤖 AI generated 5 problems
+deactivate UI
+
+loop For each problem
+    S -> UI: Solve problem
+    UI -> API: POST /ai/practice/{id}/check
+    API -> AI: Check answer
+    AI --> API: Correct! / Wrong (hint)
+    API --> UI: Feedback
+    UI --> S: ✓ Correct! +5 XP
+end
+
+S -> UI: Complete AI practice
+UI -> API: POST /ai/practice/{id}/complete
+activate API
+
+API -> GM: Award practice XP
+activate GM
+
+note right of GM
+    **AI Practice XP:**
+    Per correct: +5 XP
+    All correct: +5 bonus
+    Streak (3 days): +10 bonus
+    ────────────────
+    Range: 5-25 XP
+end note
+
+GM -> DB: Update XP
+deactivate GM
+
+API -> AC: Check practice achievements
+activate AC
+
+AC -> AC: Check:\n• First AI practice\n• 10 AI practices\n• Perfect AI session\n• 7-day practice streak
+
+opt Achievement unlocked
+    AC -> DB: Unlock "Self-Learner" badge
+    AC --> API: Achievement!
+end
+deactivate AC
+
+API --> UI: Practice complete!
+deactivate API
+UI --> S: +20 XP 🎉\n🏆 "Self-Learner" badge!
+
+@enduml
+
+
+' ─────────────────────────────────────────────────────────────────────────────
+' 4F. COMPLETE GAMIFICATION OVERVIEW
+' ─────────────────────────────────────────────────────────────────────────────
+
+@startuml EduMind_Gamification_Overview
+
+skinparam backgroundColor #1a1a2e
+skinparam class {
+    BackgroundColor #16213e
+    BorderColor #0f3460
+    FontColor #ffffff
+}
+
+title 🎮 EduMind Gamification System - Complete Overview
+
+package "Activity Types" {
+    
+    class "👹 BOSS BATTLE" as BOSS #8B0000 {
+        **Major Exams**
+        ══════════════════
+        • Midterm Exam
+        • Final Exam
+        • Chapter Test
+        • Competition
+        ──────────────────
+        XP: 150-500
+        Frequency: 2-4 per semester
+        ──────────────────
+        Special:
+        • Must defeat to progress
+        • Epic achievements
+        • Chapter unlock
+    }
+    
+    class "⚔️ REGULAR QUIZ" as QUIZ #1a5276 {
+        **Weekly Quizzes**
+        ══════════════════
+        • Topic review
+        • Pop quiz
+        • Mini test
+        ──────────────────
+        XP: 30-125
+        Frequency: 1-2 per week
+        ──────────────────
+        Like: Elite mobs
+        Harder than homework
+    }
+    
+    class "🐗 HOMEWORK" as HW #1e8449 {
+        **Daily Assignments**
+        ══════════════════
+        • Problem sets
+        • Reading tasks
+        • Essays
+        • Projects
+        ──────────────────
+        XP: 20-70
+        Frequency: Daily
+        ──────────────────
+        Like: Farming mobs
+        Consistent XP gain
+    }
+    
+    class "🎯 CLASS EXERCISE" as CLASS #6c3483 {
+        **In-Lesson Activities**
+        ══════════════════
+        • Warm-up
+        • Practice
+        • Drills
+        • Participation
+        ──────────────────
+        XP: 10-30
+        Frequency: Every lesson
+        ──────────────────
+        Like: Daily quests
+        Quick & easy
+    }
+    
+    class "📜 AI PRACTICE" as AI #b7950b {
+        **Optional Self-Study**
+        ══════════════════
+        • AI-generated
+        • Adaptive difficulty
+        • Extra practice
+        ──────────────────
+        XP: 5-25
+        Frequency: Unlimited
+        ──────────────────
+        Like: Side quests
+        Bonus achievements
+    }
+}
+
+package "Progression" {
+    class "📊 XP System" as XP {
+        Total XP = sum of all activities
+        Level = √(XP / 100) + 1
+        Max Level: 100
+    }
+    
+    class "🏆 Achievements" as ACH {
+        Boss: Boss Slayer, Perfect Kill
+        Quiz: Quiz Master, Streak
+        Homework: Dedication, Perfect
+        Practice: Self-Learner
+    }
+    
+    class "📈 Skills" as SKILL {
+        Each activity improves
+        subject-specific skills
+        Skills affect grade
+    }
+}
+
+BOSS --> XP : +150-500
+QUIZ --> XP : +30-125
+HW --> XP : +20-70
+CLASS --> XP : +10-30
+AI --> XP : +5-25
+
+BOSS --> ACH
+QUIZ --> ACH
+HW --> ACH
+AI --> ACH
+
+BOSS --> SKILL
+QUIZ --> SKILL
+HW --> SKILL
+CLASS --> SKILL
+AI --> SKILL
+
+@enduml
+
+
+' ╔═══════════════════════════════════════════════════════════════════════════════╗
+' ║ 5. SEQUENCE DIAGRAM - AI GENERATES LESSON PLAN                                ║
+' ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+@startuml EduMind_Sequence_AI_LessonPlan
+
+skinparam backgroundColor #1a1a2e
+skinparam sequence {
+    ParticipantBackgroundColor #16213e
+    ParticipantBorderColor #0f3460
+    ParticipantFontColor #ffffff
+    ActorBackgroundColor #e94560
+    ArrowColor #3498db
+}
+
+actor Teacher as T
+participant "Frontend" as UI
+participant "API Server" as API
+participant "Rate Limiter" as RL
+database "Redis Cache" as Cache
+participant "AI Service\n(Claude)" as AI
+database "Database" as DB
+
+T -> UI: Request lesson plan generation
+activate UI
+
+UI -> API: POST /ai/lesson-plan/generate
+activate API
+
+API -> RL: Check rate limit
+activate RL
+alt Rate limit exceeded
+    RL --> API: 429 Rate limit error
+    API --> UI: Rate limit error
+    UI --> T: Show upgrade prompt
+else Rate OK
+    RL --> API: OK
+end
+deactivate RL
+
+API -> Cache: Check cache (input hash)
+activate Cache
+alt Cache hit
+    Cache --> API: Cached response
+    API --> UI: Lesson plan (cached)
+    UI --> T: Display plan (fast!)
+else Cache miss
+    Cache --> API: null
+    deactivate Cache
+    
+    API -> DB: Get class context
+    activate DB
+    DB --> API: Class, students, recent lessons
+    deactivate DB
+    
+    API -> API: Build prompt with context
+    
+    API -> AI: Generate lesson plan\n(Claude Sonnet)
+    activate AI
+    note right of AI: ~10-30 seconds\nprocessing
+    AI --> API: Generated plan (JSON)
+    deactivate AI
+    
+    API -> API: Parse & validate response
+    
+    API -> Cache: Store in cache\n(TTL: 1 day)
+    activate Cache
+    Cache --> API: Stored
+    deactivate Cache
+    
+    API -> DB: Save lesson plan
+    activate DB
+    DB --> API: Saved
+    deactivate DB
+    
+    API -> DB: Log AI usage\n(tokens, cost)
+    activate DB
+    DB --> API: Logged
+    deactivate DB
+    
+    API -> DB: Increment tenant AI usage
+    activate DB
+    DB --> API: Updated
+    deactivate DB
+    
+    API --> UI: Lesson plan data
+    deactivate API
+    
+    UI --> T: Display generated plan
+    deactivate UI
+end
+
+T -> UI: Edit plan (optional)
+activate UI
+UI -> API: PATCH /lesson-plans/{id}
+activate API
+API -> DB: Save teacher edits
+activate DB
+DB --> API: Saved
+deactivate DB
+API --> UI: Updated plan
+deactivate API
+UI --> T: Confirm saved
+deactivate UI
+
+@enduml
+
+
+' ╔═══════════════════════════════════════════════════════════════════════════════╗
+' ║ 6. SEQUENCE DIAGRAM - STUDENT ONBOARDING VIA INVITE                           ║
+' ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+@startuml EduMind_Sequence_Onboarding
+
+skinparam backgroundColor #1a1a2e
+skinparam sequence {
+    ParticipantBackgroundColor #16213e
+    ParticipantBorderColor #0f3460
+    ParticipantFontColor #ffffff
+    ActorBackgroundColor #e94560
+    ArrowColor #3498db
+}
+
+actor Teacher as T
+actor "New Student" as S
+participant "Frontend" as UI
+participant "API Server" as API
+database "Database" as DB
+participant "Email Service\n(Resend)" as Email
+
+== Teacher Generates Invite ==
+
+T -> UI: Generate class invite
+activate UI
+
+UI -> API: POST /classes/{id}/invite
+activate API
+
+API -> DB: Create invite record
+activate DB
+DB --> API: Invite code: ABC123XYZ
+deactivate DB
+
+API --> UI: Invite URL
+deactivate API
+
+UI --> T: Show invite link\nhttps://app.edumind.ai/join/ABC123XYZ
+deactivate UI
+
+note over T,S: Teacher shares link\n(WhatsApp, Email, etc.)
+
+== Student Joins ==
+
+S -> UI: Open invite link
+activate UI
+
+UI -> API: GET /invites/ABC123XYZ/validate
+activate API
+
+API -> DB: Check invite validity
+activate DB
+
+alt Invite expired or max uses reached
+    DB --> API: Invalid
+    API --> UI: Invalid invite
+    UI --> S: Show error message
+else Invite valid
+    DB --> API: Invite + class info
+    deactivate DB
+    
+    API --> UI: Valid, show signup form
+    deactivate API
+    
+    UI --> S: Display signup form
+    deactivate UI
+    
+    S -> UI: Fill registration form\n(name, email, password)
+    activate UI
+    
+    UI -> API: POST /auth/register-with-invite
+    activate API
+    
+    API -> DB: Create user
+    activate DB
+    DB --> API: User created
+    deactivate DB
+    
+    API -> DB: Create student profile
+    activate DB
+    DB --> API: Student created
+    deactivate DB
+    
+    API -> DB: Create class enrollment
+    activate DB
+    DB --> API: Enrolled
+    deactivate DB
+    
+    API -> DB: Create initial class profile\n(level 1, grade E, skills 0%)
+    activate DB
+    DB --> API: Profile created
+    deactivate DB
+    
+    API -> DB: Increment invite used_count
+    activate DB
+    DB --> API: Updated
+    deactivate DB
+    
+    API -> Email: Send welcome email
+    activate Email
+    Email --> API: Sent
+    deactivate Email
+    
+    API -> DB: Create notification for teacher\n"New student joined!"
+    activate DB
+    DB --> API: Created
+    deactivate DB
+    
+    API --> UI: Success + JWT tokens
+    deactivate API
+    
+    UI --> S: Redirect to dashboard
+    deactivate UI
+    
+    note over S: Student sees first-time\nonboarding tutorial
+    
+    S -> UI: Complete profile setup\n(avatar, preferences)
+    activate UI
+    UI -> API: PATCH /students/me
+    activate API
+    API -> DB: Update student
+    activate DB
+    DB --> API: Updated
+    deactivate DB
+    API --> UI: Success
+    deactivate API
+    UI --> S: Show dashboard 🎉
+    deactivate UI
+end
+
+@enduml
+
+
+' ╔═══════════════════════════════════════════════════════════════════════════════╗
+' ║ 7. STATE DIAGRAM - HOMEWORK LIFECYCLE                                         ║
+' ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+@startuml EduMind_State_Homework
+
+skinparam backgroundColor #1a1a2e
+skinparam state {
+    BackgroundColor #16213e
+    BorderColor #0f3460
+    FontColor #ffffff
+    StartColor #2ecc71
+    EndColor #e94560
+}
+
+[*] --> Draft : Teacher creates
+
+state Draft {
+    Draft : Homework saved
+    Draft : Not visible to students
+}
+
+Draft --> Assigned : Publish to class
+Draft --> Deleted : Teacher deletes
+
+state Assigned {
+    Assigned : Visible to students
+    Assigned : Awaiting submissions
+}
+
+Assigned --> Submitted : Student submits
+Assigned --> Overdue : Past due date
+
+state Submitted {
+    Submitted : XP earned for submission
+    Submitted : Awaiting review
+}
+
+Submitted --> AIChecking : AI review requested
+Submitted --> Grading : Manual grading
+
+state AIChecking {
+    AIChecking : AI analyzing answer
+    AIChecking : Generating feedback
+}
+
+AIChecking --> Grading : AI provides suggestions
+
+state Grading {
+    Grading : Teacher reviewing
+    Grading : Adjusting score
+}
+
+Grading --> Graded : Score assigned
+Grading --> Returned : Needs revision
+
+state Returned {
+    Returned : Feedback sent to student
+    Returned : Awaiting resubmission
+}
+
+Returned --> Submitted : Student resubmits
+
+state Graded {
+    Graded : Final score assigned
+    Graded : Final XP calculated
+    Graded : Skills updated
+    Graded : Achievements checked
+}
+
+Graded --> [*]
+
+state Overdue {
+    Overdue : Past deadline
+    Overdue : Reduced XP possible
+}
+
+Overdue --> Submitted : Late submission
+Overdue --> Closed : No submission
+
+state Closed {
+    Closed : No longer accepting
+    Closed : 0 points awarded
+}
+
+Closed --> [*]
+Deleted --> [*]
+
+note right of Submitted
+  XP earned for submission:
+  - On time: 20 XP
+  - Early: 30 XP
+  - Late: 10 XP
+end note
+
+note right of Graded
+  Final XP based on score:
+  - 100%: 70 XP total
+  - 90%+: 40 XP
+  - 80%+: 30 XP
+end note
+
+@enduml
+
+
+' ╔═══════════════════════════════════════════════════════════════════════════════╗
+' ║ 8. STATE DIAGRAM - STUDENT LEVEL PROGRESSION                                  ║
+' ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+@startuml EduMind_State_Level
+
+skinparam backgroundColor #1a1a2e
+skinparam state {
+    BackgroundColor #16213e
+    BorderColor #0f3460
+    FontColor #ffffff
+}
+
+[*] --> Level1 : New student joins
+
+state "Level 1-9\nNewcomer" as L1_9 #darkgreen {
+    state "Level 1" as L1
+    state "Level 5\nTitle: Student" as L5
+    L1 --> L5 : +1,600 XP
+}
+
+state "Level 10-24\nLearner" as L10_24 #darkblue {
+    state "Level 10" as L10
+    state "Level 15\nTitle: Scholar" as L15
+    state "Level 20\nTitle: Apprentice" as L20
+    L10 --> L15 : +11,500 XP
+    L15 --> L20 : +16,500 XP
+}
+
+state "Level 25-49\nAdept" as L25_49 #purple {
+    state "Level 25\nTitle: Adept" as L25
+    state "Level 30\nTitle: Expert" as L30
+    state "Level 40\nTitle: Master" as L40
+    L25 --> L30 : +26,500 XP
+    L30 --> L40 : +68,000 XP
+}
+
+state "Level 50-74\nGrandmaster" as L50_74 #darkorange {
+    state "Level 50\nFrame: Golden" as L50
+    state "Level 60" as L60
+    state "Level 70" as L70
+    L50 --> L60 : +88,000 XP
+    L60 --> L70 : +108,000 XP
+}
+
+state "Level 75-99\nSage" as L75_99 #darkred {
+    state "Level 75\nTitle: Elite" as L75
+    state "Level 90\nTitle: Near Perfect" as L90
+    L75 --> L90 : +308,000 XP
+}
+
+state "Level 100\n⭐ LEGEND ⭐" as L100 #gold {
+    state "Max Level Reached" as MAX
+    MAX : Total XP: 980,100+
+    MAX : Title: The Maxed
+    MAX : Frame: Legendary Crown
+    MAX : All achievements available
+}
+
+Level1 --> L1_9
+L1_9 --> L10_24 : Level 10
+L10_24 --> L25_49 : Level 25
+L25_49 --> L50_74 : Level 50
+L50_74 --> L75_99 : Level 75
+L75_99 --> L100 : Level 100
+
+L100 --> [*] : Max level reached!
+
+note right of L1_9
+  XP Sources:
+  • Lessons: 50-100 XP
+  • Homework: 20-70 XP
+  • Quizzes: 30-125 XP
+  • Boss Battles: 150-350 XP
+  • Streaks: 10-1500 XP
+  • Achievements: 25-5000 XP
+end note
+
+note right of L100
+  Formula:
+  Level = √(XP / 100) + 1
+  
+  XP for Level N:
+  XP = (N - 1)² × 100
+end note
+
+@enduml
+
+
+' ╔═══════════════════════════════════════════════════════════════════════════════╗
+' ║ 9. COMPONENT DIAGRAM                                                          ║
+' ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+@startuml EduMind_Component
+
+skinparam backgroundColor #1a1a2e
+skinparam component {
+    BackgroundColor #16213e
+    BorderColor #0f3460
+    FontColor #ffffff
+}
+skinparam database {
+    BackgroundColor #2c3e50
+    BorderColor #3498db
+    FontColor #ffffff
+}
+skinparam cloud {
+    BackgroundColor #34495e
+    BorderColor #9b59b6
+    FontColor #ffffff
+}
+
+package "Client Layer" {
+    [Web App\nNext.js 14] as WEB
+    [Mobile App\nReact Native] as MOBILE
+    [Desktop App\nElectron] as DESKTOP
+}
+
+package "API Layer" {
+    [API Gateway\nVercel Edge] as GW
+    [REST API\nExpress.js] as REST
+    [WebSocket\nSocket.io] as WS
+}
+
+package "Service Layer" {
+    [Auth Service] as AUTH
+    [User Service] as USER
+    [Class Service] as CLASS
+    [Lesson Service] as LESSON
+    [Homework Service] as HW
+    [Quiz Service] as QUIZ
+    [Gamification Service] as GAME
+    [Notification Service] as NOTIF
+    [Calendar Service] as CAL
+    [Analytics Service] as ANALYTICS
+}
+
+package "AI Layer" {
+    [AI Router] as ROUTER
+    [Claude Sonnet\nComplex tasks] as SONNET
+    [Claude Haiku\nSimple tasks] as HAIKU
+    [Prompt Manager] as PROMPT
+    [AI Cache] as AICACHE
+}
+
+package "Data Layer" {
+    database "PostgreSQL\nSupabase" as PG
+    database "Redis\nUpstash" as REDIS
+    database "R2 Storage\nCloudflare" as R2
+}
+
+cloud "External Services" {
+    [Microsoft OAuth] as MSFT
+    [Paddle\nPayments] as PADDLE
+    [Resend\nEmail] as RESEND
+    [Sentry\nMonitoring] as SENTRY
+    [Google Calendar] as GCAL
+}
+
+' Client connections
+WEB --> GW
+MOBILE --> GW
+DESKTOP --> GW
+
+' API Gateway routing
+GW --> REST
+GW --> WS
+
+' REST to Services
+REST --> AUTH
+REST --> USER
+REST --> CLASS
+REST --> LESSON
+REST --> HW
+REST --> QUIZ
+REST --> GAME
+REST --> NOTIF
+REST --> CAL
+REST --> ANALYTICS
+
+' WebSocket
+WS --> NOTIF
+
+' Service to AI
+LESSON --> ROUTER
+HW --> ROUTER
+QUIZ --> ROUTER
+
+' AI routing
+ROUTER --> SONNET
+ROUTER --> HAIKU
+ROUTER --> PROMPT
+ROUTER --> AICACHE
+AICACHE --> REDIS
+
+' Service to Data
+AUTH --> PG
+USER --> PG
+CLASS --> PG
+LESSON --> PG
+HW --> PG
+QUIZ --> PG
+GAME --> PG
+GAME --> REDIS
+ANALYTICS --> PG
+
+' Service to Storage
+HW --> R2
+USER --> R2
+
+' External integrations
+AUTH --> MSFT
+NOTIF --> RESEND
+CAL --> GCAL
+REST --> PADDLE
+REST --> SENTRY
+
+@enduml
+
+
+' ╔═══════════════════════════════════════════════════════════════════════════════╗
+' ║ 10. DEPLOYMENT DIAGRAM                                                        ║
+' ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+@startuml EduMind_Deployment
+
+skinparam backgroundColor #1a1a2e
+skinparam node {
+    BackgroundColor #16213e
+    BorderColor #0f3460
+    FontColor #ffffff
+}
+skinparam cloud {
+    BackgroundColor #2c3e50
+    BorderColor #3498db
+    FontColor #ffffff
+}
+skinparam database {
+    BackgroundColor #34495e
+    BorderColor #2ecc71
+    FontColor #ffffff
+}
+
+cloud "User Devices" {
+    node "🌐 Browser" as BROWSER
+    node "📱 iOS App" as IOS
+    node "📱 Android App" as ANDROID
+}
+
+cloud "Cloudflare" {
+    node "CDN" as CDN
+    node "WAF" as WAF
+    node "DNS" as DNS
+    database "R2 Storage\n(Files, Avatars)" as R2
+}
+
+cloud "Vercel" {
+    node "Edge Functions\n(Middleware)" as EDGE
+    node "Next.js App\n(SSR/SSG)" as NEXT
+    node "Preview Deployments" as PREVIEW
+}
+
+cloud "Railway" {
+    node "Express API\n(Main Backend)" as API
+    node "Background Workers\n(Queues)" as WORKER
+    node "Cron Jobs\n(Scheduled)" as CRON
+}
+
+cloud "Supabase" {
+    database "PostgreSQL\n(Primary DB)" as PG
+    node "Auth\n(Supabase Auth)" as SAUTH
+    node "Realtime\n(Subscriptions)" as RT
+}
+
+cloud "Upstash" {
+    database "Redis\n(Cache, Sessions)" as REDIS
+    node "Kafka\n(Event Queue)" as KAFKA
+}
+
+cloud "External APIs" {
+    node "Anthropic\nClaude API" as ANTHROPIC
+    node "Paddle\nPayments" as PADDLE
+    node "Resend\nEmail" as RESEND
+    node "Google Calendar" as GCAL
+    node "Microsoft Graph" as MSGRAPH
+}
+
+' User to Cloudflare
+BROWSER --> CDN
+IOS --> CDN
+ANDROID --> CDN
+
+' Cloudflare routing
+CDN --> WAF
+WAF --> EDGE
+
+' Vercel routing
+EDGE --> NEXT
+EDGE --> API
+
+' Next.js connections
+NEXT --> SAUTH
+NEXT --> RT
+
+' API connections
+API --> PG
+API --> REDIS
+API --> R2
+
+' Worker connections
+WORKER --> KAFKA
+WORKER --> ANTHROPIC
+WORKER --> RESEND
+WORKER --> PG
+
+' Cron connections
+CRON --> PG
+CRON --> REDIS
+
+' External API connections
+API --> GCAL
+API --> MSGRAPH
+API --> PADDLE
+API --> ANTHROPIC
+
+@enduml
+
+
+' ╔═══════════════════════════════════════════════════════════════════════════════╗
+' ║ 11. ACTIVITY DIAGRAM - HOMEWORK SUBMISSION FLOW                               ║
+' ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+@startuml EduMind_Activity_Homework
+
+skinparam backgroundColor #1a1a2e
+skinparam activity {
+    BackgroundColor #16213e
+    BorderColor #0f3460
+    FontColor #ffffff
+    DiamondBackgroundColor #f39c12
+    DiamondBorderColor #e74c3c
+}
+
+start
+
+:Student opens homework;
+
+:View homework details\n(instructions, due date);
+
+if (Already submitted?) then (yes)
+    :View previous submission;
+    if (Returned for revision?) then (yes)
+        :Edit submission;
+    else (no)
+        :View grade & feedback;
+        stop
+    endif
+else (no)
+endif
+
+:Complete homework;
+
+:Upload attachments\n(if required);
+
+if (Before deadline?) then (yes)
+    :Submit homework;
+    :Award submission XP\n(20-30 XP);
+else (no)
+    if (Late submission allowed?) then (yes)
+        :Submit with late flag;
+        :Award reduced XP\n(10 XP);
+    else (no)
+        :Show deadline passed;
+        stop
+    endif
+endif
+
+fork
+    :Notify teacher;
+fork again
+    :Update activity feed;
+fork again
+    :Check achievements;
+    if (Achievement unlocked?) then (yes)
+        :Award achievement;
+        :Show notification;
+    else (no)
+    endif
+end fork
+
+:Await grading;
+
+:Receive grade;
+
+if (Score >= 80%) then (yes)
+    :Award bonus XP;
+    :Update skill progress;
+else (no)
+    :Update skill progress\n(smaller gain);
+endif
+
+:Final XP calculated;
+
+:Update leaderboard;
+
+stop
+
+@enduml
+
+
+' ╔═══════════════════════════════════════════════════════════════════════════════╗
+' ║ 12. PACKAGE DIAGRAM - MONOREPO STRUCTURE                                      ║
+' ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+@startuml EduMind_Package
+
+skinparam backgroundColor #1a1a2e
+skinparam package {
+    BackgroundColor #16213e
+    BorderColor #0f3460
+    FontColor #ffffff
+}
+
+package "edumind (Turborepo)" {
+    
+    package "apps" {
+        package "web" {
+            [Next.js 14 App]
+            [App Router]
+            [Components]
+            [Hooks]
+        }
+        
+        package "mobile" {
+            [React Native App]
+            [Expo Router]
+            [Native Components]
+        }
+        
+        package "api" {
+            [Express.js Server]
+            [Controllers]
+            [Routes]
+            [Middleware]
+        }
+    }
+    
+    package "packages" {
+        package "database" {
+            [Prisma Schema]
+            [Migrations]
+            [Seed]
+            [Client]
+        }
+        
+        package "shared" {
+            [Types]
+            [Constants]
+            [Utils]
+            [Validation (Zod)]
+            [Gamification Logic]
+        }
+        
+        package "ui" {
+            [Base Components]
+            [Gamification Components]
+            [Theme]
+            [Hooks]
+        }
+        
+        package "ai" {
+            [AI Providers]
+            [Prompts]
+            [Cache]
+            [Services]
+        }
+    }
+    
+    package "tooling" {
+        [ESLint Config]
+        [Prettier Config]
+        [TypeScript Config]
+    }
+}
+
+[web] --> [shared]
+[web] --> [ui]
+[mobile] --> [shared]
+[mobile] --> [ui]
+[api] --> [shared]
+[api] --> [database]
+[api] --> [ai]
+[ai] --> [shared]
+[database] --> [shared]
+
+@enduml
+
+
+' ╔═══════════════════════════════════════════════════════════════════════════════╗
+' ║ 13. BATTLE SYSTEM - CLASS DIAGRAM                                            ║
+' ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+@startuml EduMind_Battle_ClassDiagram
+
+skinparam backgroundColor #1a1a2e
+skinparam class {
+    BackgroundColor #16213e
+    BorderColor #0f3460
+    FontColor #ffffff
+    AttributeFontColor #e94560
+}
+
+title ⚔️ EduMind Battle System - Class Diagram
+
+' ─────────────────────────────────────────────────────────────────────────────
+' ENUMS
+' ─────────────────────────────────────────────────────────────────────────────
+
+enum Theme {
+    FANTASY
+    CYBERPUNK
+    MILITARY
+    SCI_FI
+    ANIME
+    STEAMPUNK
+}
+
+enum ClassRarity {
+    COMMON
+    UNCOMMON
+    RARE
+    EPIC
+    LEGENDARY
+    MYTHIC
+}
+
+enum SkillType {
+    PHYSICAL
+    MAGIC
+    HYBRID
+    HEAL
+    BUFF
+    DEBUFF
+    STATUS
+    ULTIMATE
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' CORE CLASSES
+' ─────────────────────────────────────────────────────────────────────────────
+
+class Student {
+    - id: UUID
+    - subjectStats: Map<Subject, Stats>
+    - achievements: Achievement[]
+    - level: Int
+    --
+    + getBattleCharacter(): BattleCharacter
+}
+
+class BattleCharacter {
+    - id: UUID
+    - studentId: UUID
+    - classId: UUID
+    - theme: Theme
+    ==ATTRIBUTES==
+    - hp: Int
+    - mp: Int
+    - sta: Int
+    - atk: Int
+    - def: Int
+    - spd: Int
+    - lck: Int
+    ==BATTLE STATS==
+    - battlesWon: Int
+    - battlesLost: Int
+    - knowledgePoints: Int
+    --
+    + calculateStats(): void
+    + equipSkill(skill): void
+    + startBattle(enemy): Battle
+    + useSkill(skill): DamageResult
+    + basicAttack(): DamageResult
+}
+
+class CharacterClass {
+    - id: UUID
+    - name: String
+    - theme: Theme
+    - rarity: ClassRarity
+    - passives: PassiveBonus[]
+    - abilities: Ability[]
+    - requirements: Requirements
+    --
+    + checkUnlockConditions(student): Boolean
+    + getPassiveBonus(): Stats
+    + canEvolveTo(): CharacterClass[]
+}
+
+class Skill {
+    - id: UUID
+    - name: String
+    - type: SkillType
+    - rarity: SkillRarity
+    - mpCost: Int
+    - staCost: Int
+    - power: Int
+    - cooldown: Int
+    - effects: Effect[]
+    - unlockConditions: Conditions
+    --
+    + checkUnlock(student, character): Boolean
+    + execute(attacker, defender): SkillResult
+    + calculateDamage(attacker, defender): Int
+}
+
+class Battle {
+    - id: UUID
+    - type: BattleType
+    - player1: BattleCharacter
+    - player2: BattleCharacter
+    - battleLog: TurnLog[]
+    - currentTurn: Int
+    --
+    + start(): void
+    + executeTurn(action): TurnResult
+    + checkWinCondition(): Winner?
+    + calculateRewards(): Rewards
+}
+
+class Item {
+    - id: UUID
+    - name: String
+    - type: ItemType
+    - rarity: ItemRarity
+    - price: Int
+    - effects: Effect[]
+    --
+    + use(character): UseResult
+    + canEquip(character): Boolean
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' SERVICES
+' ─────────────────────────────────────────────────────────────────────────────
+
+class BattleService <<service>> {
+    + createBattle(p1, p2): Battle
+    + processTurn(battle, action): TurnResult
+    + calculateDamage(attacker, defender, skill): Int
+    + applyStatusEffects(character): void
+    + endBattle(battle): Rewards
+}
+
+class StatsCalculator <<service>> {
+    + calculateFromSubjects(student): BaseStats
+    + applyClassBonus(stats, class): Stats
+    + applyEquipment(stats, items): Stats
+    + getFinalStats(character): Stats
+}
+
+class ClassUnlockService <<service>> {
+    + getAvailableClasses(student): CharacterClass[]
+    + proposeClasses(student, count): CharacterClass[]
+    + evolveClass(character, newClass): void
+    + checkEvolutionConditions(character): CharacterClass[]
+}
+
+class SkillUnlockService <<service>> {
+    + getAvailableSkills(student, character): Skill[]
+    + checkUnlockConditions(skill, student): Boolean
+    + unlockSkill(character, skill): void
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' RELATIONSHIPS
+' ─────────────────────────────────────────────────────────────────────────────
+
+Student "1" --> "0..1" BattleCharacter : has
+BattleCharacter "1" --> "1" CharacterClass : uses
+BattleCharacter "1" --> "*" Skill : equips
+BattleCharacter "1" --> "*" Item : owns
+BattleCharacter "*" --> "*" Battle : participates
+
+CharacterClass --> Theme
+CharacterClass --> ClassRarity
+CharacterClass "1" --> "*" CharacterClass : evolves to
+
+Skill --> SkillType
+Skill --> CharacterClass : exclusive to
+
+Battle --> BattleService : uses
+BattleCharacter --> StatsCalculator : uses
+
+@enduml
+
+
+' ╔═══════════════════════════════════════════════════════════════════════════════╗
+' ║ 14. BATTLE SEQUENCE - PVP BATTLE FLOW                                        ║
+' ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+@startuml EduMind_Battle_Sequence
+
+skinparam backgroundColor #1a1a2e
+skinparam sequence {
+    ParticipantBackgroundColor #16213e
+    ParticipantBorderColor #0f3460
+    ParticipantFontColor #ffffff
+    ActorBackgroundColor #e94560
+    ArrowColor #3498db
+}
+
+title ⚔️ PvP Battle Flow
+
+actor "Player 1" as P1
+actor "Player 2" as P2
+participant "Battle UI" as UI
+participant "Battle Service" as BS
+participant "Stats Calculator" as SC
+database "Database" as DB
+
+== Battle Initialization ==
+
+P1 -> UI: Challenge Player 2
+UI -> BS: createBattle(p1Id, p2Id)
+BS -> DB: Check daily limits
+DB --> BS: Limits OK
+
+BS -> SC: calculateFinalStats(player1)
+SC -> DB: Get subject stats
+DB --> SC: Subject averages
+SC -> SC: Apply subject conversions
+SC -> SC: Apply class bonus
+SC -> SC: Apply equipment
+SC --> BS: Player 1 stats
+
+BS -> SC: calculateFinalStats(player2)
+SC --> BS: Player 2 stats
+
+BS -> DB: Create battle record
+BS --> UI: Battle ready
+
+UI --> P1: Battle starts!
+UI --> P2: Battle starts!
+
+== Turn Loop ==
+
+loop Until HP <= 0 or Turn 30
+
+    BS -> BS: Calculate turn order (SPD)
+    
+    alt Player 1 faster
+        UI --> P1: Your turn!
+        
+        P1 -> UI: Choose action
+        
+        alt Basic Attack
+            UI -> BS: basicAttack()
+            BS -> BS: damage = ATK × 1.0
+            BS -> BS: Apply defense reduction
+            BS -> BS: Check critical hit
+            BS -> DB: Update HP
+            BS --> UI: Damage result
+        else Use Skill
+            UI -> BS: useSkill(skillId)
+            BS -> BS: Check MP/STA cost
+            BS -> BS: damage = power × ATK / 100
+            BS -> BS: Apply effects
+            BS -> BS: Start cooldown
+            BS -> DB: Update HP/MP/STA
+            BS --> UI: Skill result
+        else Defend
+            UI -> BS: defend()
+            BS -> BS: +50% DEF this turn
+            BS -> BS: Recover +10 MP, +10 STA
+            BS --> UI: Defend active
+        else Use Item
+            UI -> BS: useItem(itemId)
+            BS -> BS: Apply item effect
+            BS -> DB: Remove item from inventory
+            BS --> UI: Item used
+        end
+        
+        UI --> P1: Action complete
+        UI --> P2: Enemy action result
+        
+    else Player 2 faster
+        UI --> P2: Your turn!
+        note right: Same flow for Player 2
+    end
+    
+    == End of Turn ==
+    
+    BS -> BS: Apply status effects (burn, poison)
+    BS -> BS: Reduce buff/debuff durations
+    BS -> BS: Regenerate +5 MP, +5 STA
+    BS -> BS: Check skill cooldowns
+    
+    BS -> BS: Check win condition
+    
+end
+
+== Battle End ==
+
+alt Player 1 wins
+    BS -> BS: Calculate rewards
+    note right
+        Winner: 50-100 XP, 50-100 KP
+        10% item drop
+        5% skill book drop
+    end note
+    
+    BS -> DB: Award XP to winner
+    BS -> DB: Award KP to both
+    BS -> DB: Update battle stats
+    BS -> DB: Check skill drops
+    
+    BS --> UI: Battle complete
+    UI --> P1: Victory! +75 XP, +80 KP
+    UI --> P2: Defeat. +20 XP, +20 KP
+    
+else Player 2 wins
+    note right: Same as above, reversed
+    
+else Draw (30 turns)
+    BS -> DB: Award 35 XP, 35 KP to both
+    UI --> P1: Draw!
+    UI --> P2: Draw!
+end
+
+@enduml
+
+
+' ╔═══════════════════════════════════════════════════════════════════════════════╗
+' ║ 15. CLASS AWAKENING & EVOLUTION SEQUENCE                                      ║
+' ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+@startuml EduMind_Class_Awakening
+
+skinparam backgroundColor #1a1a2e
+skinparam sequence {
+    ParticipantBackgroundColor #16213e
+    ParticipantBorderColor #0f3460
+    ParticipantFontColor #ffffff
+    ActorBackgroundColor #f39c12
+    ArrowColor #2ecc71
+}
+
+title 🌟 Class Awakening & Evolution System
+
+actor Student as S
+participant "Frontend" as UI
+participant "Class Service" as CS
+participant "Stats Calculator" as SC
+database "Database" as DB
+
+== Level 1-4: Unawakened ==
+
+note over S,DB
+    Student is studying, no battle access yet.
+    System is tracking performance...
+end note
+
+S -> UI: Reaches Level 5!
+UI -> CS: triggerAwakening(studentId)
+
+== AWAKENING! ==
+
+CS -> DB: Get student data
+DB --> CS: Subject stats, achievements
+
+CS -> SC: analyzePerformance(student)
+SC -> SC: Calculate strongest subjects
+SC -> SC: Match with class requirements
+SC --> CS: Performance analysis
+
+CS -> CS: Generate class proposals
+
+note right of CS
+    **Proposal Algorithm:**
+    1. Find classes matching best subjects
+    2. Filter by rarity student qualifies for
+    3. Sort by compatibility score
+    4. Return top 5 classes
+end note
+
+CS --> UI: 5 proposed classes
+
+UI --> S: 🌟 AWAKENING! Choose your class:
+note right
+    1. ⭐ Elementalist (Uncommon) - 95% match
+    2. ⭐ Knight (Uncommon) - 88% match
+    3. Apprentice Mage (Common) - 85% match
+    4. Squire (Common) - 80% match
+    5. Scout (Common) - 75% match
+    
+    [Or choose basic class manually]
+end note
+
+S -> UI: Select "Elementalist"
+UI -> CS: selectClass(studentId, classId)
+
+CS -> DB: Create BattleCharacter
+CS -> DB: Assign class
+CS -> SC: calculateInitialStats(student, class)
+SC --> CS: Initial battle stats
+CS -> DB: Save stats
+
+CS -> DB: Unlock starter skills
+CS --> UI: Awakening complete!
+
+UI --> S: 🎉 You are now an Elementalist!\nBattle system unlocked!
+
+== Level 10+: Evolution ==
+
+note over S,DB
+    Student continues studying...
+    Improves Math from 70% to 82%
+end note
+
+S -> UI: Level up to 20!
+UI -> CS: checkEvolution(characterId)
+
+CS -> DB: Get current class, student data
+DB --> CS: Elementalist (Uncommon), stats
+
+CS -> CS: Check evolution conditions
+note right of CS
+    **Rare Evolution Requirements:**
+    - Level 20+ ✓
+    - 80%+ in 2 subjects ✓
+    - 5+ achievements ✓
+end note
+
+CS -> DB: Find available evolutions
+DB --> CS: [Archmage, Pyromancer, Cryomancer]
+
+CS --> UI: Evolution available!
+
+UI --> S: ⬆️ Evolution Available!\nYou can become:
+note right
+    1. Archmage (Rare) - +12% MP, +12% ATK
+    2. Pyromancer (Rare) - Fire specialist
+    3. Cryomancer (Rare) - Ice specialist
+end note
+
+S -> UI: Evolve to "Archmage"
+UI -> CS: evolveClass(characterId, newClassId)
+
+CS -> DB: Update class
+CS -> DB: Log evolution history
+CS -> SC: recalculateStats()
+CS -> DB: Unlock new abilities
+
+CS --> UI: Evolution complete!
+UI --> S: 🎊 You evolved into Archmage!\n+12% MP, +12% ATK\nNew ability: Mana Shield
+
+@enduml
+
+
+' ╔═══════════════════════════════════════════════════════════════════════════════╗
+' ║ 16. BATTLE SYSTEM STATE DIAGRAM                                               ║
+' ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+@startuml EduMind_Battle_State
+
+skinparam backgroundColor #1a1a2e
+skinparam state {
+    BackgroundColor #16213e
+    BorderColor #0f3460
+    FontColor #ffffff
+}
+
+title ⚔️ Battle State Diagram
+
+[*] --> Unawakened : New student
+
+state Unawakened {
+    Unawakened : Level 1-4
+    Unawakened : No class
+    Unawakened : No battle access
+    Unawakened : Building stats through study
+}
+
+Unawakened --> Awakening : Level 5 reached
+
+state Awakening {
+    Awakening : System analyzes stats
+    Awakening : Proposes 5 classes
+    Awakening : Student chooses
+}
+
+Awakening --> Ready : Class selected
+
+state Ready {
+    Ready : Has class
+    Ready : Has starter skills
+    Ready : Can battle
+    Ready : 5 PvP/day
+}
+
+Ready --> InBattle : Start battle
+
+state InBattle {
+    state "Turn Start" as TS
+    state "Action Selection" as AS
+    state "Action Execution" as AE
+    state "Status Effects" as SE
+    state "Turn End" as TE
+    state "Win Check" as WC
+    
+    TS --> AS : Determine turn order
+    AS --> AE : Player chooses action
+    AE --> SE : Execute action
+    SE --> TE : Apply effects
+    TE --> WC : Regen MP/STA
+    WC --> TS : Continue
+}
+
+InBattle --> Victory : Enemy HP = 0
+InBattle --> Defeat : Your HP = 0
+InBattle --> Draw : Turn 30 reached
+
+state Victory {
+    Victory : +50-100 XP
+    Victory : +50-100 KP
+    Victory : Item/Skill drops
+}
+
+state Defeat {
+    Defeat : +20 XP
+    Defeat : +20 KP
+    Defeat : Learn from loss
+}
+
+state Draw {
+    Draw : +35 XP each
+    Draw : +35 KP each
+}
+
+Victory --> Ready
+Defeat --> Ready
+Draw --> Ready
+
+Ready --> Evolution : Meet requirements
+
+state Evolution {
+    Evolution : Level 10/20/35/50/75
+    Evolution : Subject requirements met
+    Evolution : Achievements unlocked
+    Evolution : Choose new class
+}
+
+Evolution --> Ready : Class upgraded
+
+note right of Unawakened
+    Study → Build Stats
+    Math 80% → +40 MP
+    PE 90% → +72 HP
+end note
+
+note right of Evolution
+    Common → Uncommon (Lv10)
+    Uncommon → Rare (Lv20)
+    Rare → Epic (Lv35)
+    Epic → Legendary (Lv50)
+    Legendary → Mythic (Lv75)
+end note
+
+@enduml
+
+
+' ╔═══════════════════════════════════════════════════════════════════════════════╗
+' ║ 17. STATS CONVERSION DIAGRAM                                                  ║
+' ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+@startuml EduMind_Stats_Conversion
+
+skinparam backgroundColor #1a1a2e
+skinparam class {
+    BackgroundColor #16213e
+    BorderColor #0f3460
+    FontColor #ffffff
+}
+
+title 📊 Subject Stats → Battle Stats Conversion
+
+package "Academic Performance" {
+    class "📐 Mathematics\n(85% avg)" as Math #3498db
+    class "🧪 Science\n(78% avg)" as Science #27ae60
+    class "🏃 PE\n(92% avg)" as PE #e74c3c
+    class "🌍 Languages\n(75% avg)" as Lang #9b59b6
+    class "📜 History\n(80% avg)" as History #f39c12
+    class "🎨 Arts\n(70% avg)" as Arts #e91e63
+    class "💻 CS\n(88% avg)" as CS #00bcd4
+}
+
+package "Battle Attributes" {
+    class "❤️ HP\n(Health)" as HP #e74c3c
+    class "💙 MP\n(Mana)" as MP #3498db
+    class "💚 STA\n(Stamina)" as STA #27ae60
+    class "⚔️ ATK\n(Attack)" as ATK #ff5722
+    class "🛡️ DEF\n(Defense)" as DEF #607d8b
+    class "⚡ SPD\n(Speed)" as SPD #ffeb3b
+    class "🍀 LCK\n(Luck)" as LCK #4caf50
+}
+
+Math --> MP : ×0.5 (+42)
+Math --> ATK : ×0.15 (+12 magic)
+Math --> LCK : ×0.05 (+4)
+
+Science --> MP : ×0.3 (+23)
+Science --> DEF : ×0.2 (+15)
+
+PE --> HP : ×0.8 (+73)
+PE --> STA : ×0.5 (+46)
+PE --> ATK : ×0.2 (+18 phys)
+PE --> DEF : ×0.15 (+13)
+
+Lang --> SPD : ×0.3 (+22)
+Lang --> MP : ×0.2 (+15)
+
+History --> DEF : ×0.35 (+28)
+History --> HP : ×0.25 (+20)
+
+Arts --> MP : ×0.35 (+24)
+Arts --> HP : ×0.1 (heal power)
+
+CS --> MP : ×0.4 (+35)
+CS --> SPD : ×0.15 (+13)
+CS --> LCK : ×0.1 (+8)
+
+note bottom of HP
+    **Final Calculation Example:**
+    Base HP: 100
+    + PE (92×0.8): +73
+    + History (80×0.25): +20
+    = 193 HP
+    
+    + Class Bonus (Uncommon +8%):
+    = 208 HP
+end note
+
+@enduml
+
+
+' ═══════════════════════════════════════════════════════════════════════════════
+' END OF BATTLE SYSTEM PLANTUML DIAGRAMS
+' ═══════════════════════════════════════════════════════════════════════════════

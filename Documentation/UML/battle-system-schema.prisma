@@ -1,0 +1,526 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// EDUMIND AI - BATTLE SYSTEM DATABASE SCHEMA
+// Add these models to your existing Prisma schema
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum Theme {
+  FANTASY
+  CYBERPUNK
+  MILITARY
+  SCI_FI
+  ANIME
+  STEAMPUNK
+}
+
+enum ClassRarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  LEGENDARY
+  MYTHIC
+}
+
+enum SkillRarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  LEGENDARY
+  MYTHIC
+}
+
+enum SkillType {
+  PHYSICAL
+  MAGIC
+  HYBRID
+  HEAL
+  BUFF
+  DEBUFF
+  STATUS
+  UTILITY
+  ULTIMATE
+}
+
+enum BattleType {
+  PVP
+  PVE_DUNGEON
+  FRIENDLY
+  BOSS_RAID
+}
+
+enum BattleStatus {
+  IN_PROGRESS
+  COMPLETED
+  DRAW
+  CANCELLED
+}
+
+enum ItemType {
+  CONSUMABLE
+  WEAPON
+  ARMOR
+  ACCESSORY
+  SKILL_BOOK
+  COSMETIC
+  SPECIAL
+}
+
+enum ItemRarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  LEGENDARY
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHARACTER CLASS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model CharacterClass {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  theme       Theme
+  rarity      ClassRarity
+  description String
+  
+  // Passive bonuses (JSON array)
+  // [{ attribute: "HP", percentage: 5 }, { attribute: "ATK", percentage: 3 }]
+  passives    Json
+  
+  // Special abilities (JSON array for Rare+)
+  // [{ id: "mana_shield", name: "Mana Shield", description: "...", effect: {...} }]
+  abilities   Json?
+  
+  // Unlock requirements (JSON)
+  // { minLevel: 10, subjects: [{ subject: "MATH", min: 70 }], achievements: ["..."] }
+  requirements Json
+  
+  // Evolution paths
+  evolvesFromId String?
+  evolvesFrom   CharacterClass?  @relation("ClassEvolution", fields: [evolvesFromId], references: [id])
+  evolvesTo     CharacterClass[] @relation("ClassEvolution")
+  
+  // Exclusive skills for this class
+  exclusiveSkills Skill[]
+  
+  // Characters using this class
+  characters BattleCharacter[]
+  
+  // Metadata
+  iconUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([theme])
+  @@index([rarity])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BATTLE CHARACTER (Student's battle avatar)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model BattleCharacter {
+  id        String  @id @default(cuid())
+  studentId String  @unique
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  // Class
+  classId String
+  class   CharacterClass @relation(fields: [classId], references: [id])
+  theme   Theme
+  
+  // Base stats (calculated from subject performance + class bonus)
+  hp      Int @default(100)
+  maxHp   Int @default(100)
+  mp      Int @default(50)
+  maxMp   Int @default(50)
+  sta     Int @default(50)
+  maxSta  Int @default(50)
+  atk     Int @default(10)
+  def     Int @default(10)
+  spd     Int @default(10)
+  lck     Int @default(5)
+  
+  // Battle stats
+  battlesWon     Int @default(0)
+  battlesLost    Int @default(0)
+  battlesDraw    Int @default(0)
+  mobsDefeated   Int @default(0)
+  bossesDefeated Int @default(0)
+  
+  // Economy
+  knowledgePoints Int @default(0) // KP currency
+  
+  // Daily limits
+  pvpBattlesToday Int      @default(0)
+  lastBattleAt    DateTime?
+  lastDailyReset  DateTime @default(now())
+  
+  // Equipped skills (max 6)
+  equippedSkills CharacterSkill[]
+  
+  // Inventory
+  inventory CharacterItem[]
+  
+  // Equipment slots
+  weaponId    String?
+  armorId     String?
+  accessoryId String?
+  
+  // Battle history
+  battlesAsPlayer1 Battle[] @relation("Player1Battles")
+  battlesAsPlayer2 Battle[] @relation("Player2Battles")
+  wonBattles       Battle[] @relation("WonBattles")
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([classId])
+  @@index([theme])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SKILLS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Skill {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  description String
+  type        SkillType
+  rarity      SkillRarity
+  
+  // Costs
+  mpCost  Int @default(0)
+  staCost Int @default(0)
+  
+  // Power
+  power       Int    @default(100) // Percentage of ATK
+  hitCount    Int    @default(1)   // Number of hits
+  cooldown    Int    @default(0)   // Turns before can use again
+  
+  // Effects (JSON)
+  // { damage: { type: "magic", element: "fire" }, 
+  //   statusEffect: { type: "burn", chance: 10, duration: 3 },
+  //   buff: { stat: "ATK", amount: 20, duration: 3 } }
+  effects Json
+  
+  // Unlock conditions (JSON)
+  // { subjects: [{ subject: "MATH", min: 70 }], level: 10, achievements: [], 
+  //   battlesWon: 50, classRequired: ["mage", "wizard"] }
+  unlockConditions Json
+  
+  // Class exclusivity (null = available to all who meet conditions)
+  exclusiveToClass   CharacterClass? @relation(fields: [exclusiveClassId], references: [id])
+  exclusiveClassId   String?
+  
+  // Subject link (primary subject this skill relates to)
+  primarySubject String?
+  
+  // Characters who have this skill
+  characterSkills CharacterSkill[]
+  
+  // Metadata
+  iconUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([type])
+  @@index([rarity])
+  @@index([primarySubject])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHARACTER SKILL (Junction table with equipped status)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model CharacterSkill {
+  id          String @id @default(cuid())
+  characterId String
+  character   BattleCharacter @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  skillId     String
+  skill       Skill @relation(fields: [skillId], references: [id])
+  
+  // Is this skill currently equipped (max 6)
+  isEquipped   Boolean @default(false)
+  equipSlot    Int?    // 1-6
+  
+  // Skill mastery (future feature)
+  masteryLevel Int @default(1)
+  masteryXp    Int @default(0)
+  
+  unlockedAt DateTime @default(now())
+  
+  @@unique([characterId, skillId])
+  @@index([characterId])
+  @@index([skillId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ITEMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Item {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  description String
+  type        ItemType
+  rarity      ItemRarity
+  
+  // Price in KP
+  price Int
+  
+  // Effects (JSON)
+  // For consumable: { heal: { hp: 30 }, cleanse: true }
+  // For equipment: { stats: { atk: 5, def: 3 }, special: "crit_boost" }
+  // For skill book: { skillId: "fireball" }
+  effects Json
+  
+  // Requirements (JSON)
+  // { level: 10, class: ["warrior"], classRarity: "RARE" }
+  requirements Json?
+  
+  // Is it single use?
+  consumable Boolean @default(false)
+  
+  // Can be traded/sold?
+  tradeable Boolean @default(true)
+  
+  // In inventories
+  characterItems CharacterItem[]
+  
+  // Shop availability
+  inShop    Boolean @default(true)
+  shopLimit Int?    // Max purchases per day (null = unlimited)
+  
+  // Metadata
+  iconUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([type])
+  @@index([rarity])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHARACTER ITEM (Inventory)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model CharacterItem {
+  id          String @id @default(cuid())
+  characterId String
+  character   BattleCharacter @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  itemId      String
+  item        Item @relation(fields: [itemId], references: [id])
+  
+  // Quantity (for stackable items)
+  quantity Int @default(1)
+  
+  // Is equipped (for equipment)
+  isEquipped Boolean @default(false)
+  equipSlot  String? // "weapon", "armor", "accessory"
+  
+  acquiredAt DateTime @default(now())
+  
+  @@unique([characterId, itemId])
+  @@index([characterId])
+  @@index([itemId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BATTLES
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Battle {
+  id     String       @id @default(cuid())
+  type   BattleType
+  status BattleStatus @default(IN_PROGRESS)
+  
+  // Players
+  player1Id String
+  player1   BattleCharacter @relation("Player1Battles", fields: [player1Id], references: [id])
+  player2Id String?         // Null for PvE
+  player2   BattleCharacter? @relation("Player2Battles", fields: [player2Id], references: [id])
+  
+  // For PvE: AI opponent data
+  aiOpponent Json? // { name: "Goblin", hp: 100, atk: 15, skills: [...] }
+  
+  // Winner
+  winnerId String?
+  winner   BattleCharacter? @relation("WonBattles", fields: [winnerId], references: [id])
+  
+  // Stats at battle start (snapshot)
+  player1Stats Json // { hp: 200, mp: 100, atk: 50, ... }
+  player2Stats Json // Same for player2 or AI
+  
+  // Battle log (JSON array of turns)
+  // [{ turn: 1, actor: "player1", action: "skill", skillId: "fireball", 
+  //    damage: 150, targetHp: 50, effects: ["burn"] }, ...]
+  battleLog Json @default("[]")
+  
+  // Current turn (for in-progress battles)
+  currentTurn Int @default(1)
+  maxTurns    Int @default(30)
+  
+  // Rewards
+  rewards Json? // { xp: 50, kp: 75, items: ["potion"], skillDrop: null }
+  
+  // Timing
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  
+  @@index([player1Id])
+  @@index([player2Id])
+  @@index([winnerId])
+  @@index([type])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SHOP TRANSACTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ShopTransaction {
+  id          String @id @default(cuid())
+  characterId String
+  itemId      String
+  
+  quantity Int
+  totalKp  Int // Total KP spent
+  
+  purchasedAt DateTime @default(now())
+  
+  @@index([characterId])
+  @@index([itemId])
+  @@index([purchasedAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DUNGEONS (Future feature)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Dungeon {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String
+  
+  // Difficulty
+  difficulty    String // EASY, MEDIUM, HARD, NIGHTMARE
+  minLevel      Int
+  recommendedLevel Int
+  
+  // Subject theme (bonus for matching subjects)
+  subjectTheme String?
+  
+  // Waves of enemies (JSON)
+  // [{ wave: 1, enemies: [{ name: "Goblin", hp: 50, atk: 10, ... }] }, ...]
+  waves Json
+  
+  // Boss (final wave)
+  boss Json? // { name: "Goblin King", hp: 500, atk: 50, skills: [...] }
+  
+  // Rewards
+  rewards Json // { kp: 100, xpRange: [50, 100], itemDrops: [...], skillChance: 0.1 }
+  
+  // Cooldown
+  cooldownMinutes Int @default(0)
+  dailyLimit      Int? // Null = unlimited
+  
+  // Completions
+  completions DungeonCompletion[]
+  
+  // Metadata
+  iconUrl   String?
+  isActive  Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([difficulty])
+  @@index([subjectTheme])
+}
+
+model DungeonCompletion {
+  id          String @id @default(cuid())
+  characterId String
+  dungeonId   String
+  dungeon     Dungeon @relation(fields: [dungeonId], references: [id])
+  
+  // Result
+  completed   Boolean
+  wavesCleared Int
+  
+  // Rewards earned
+  kpEarned    Int
+  xpEarned    Int
+  itemsEarned Json? // Array of item IDs
+  
+  // Time
+  completedAt DateTime @default(now())
+  duration    Int // Seconds
+  
+  @@index([characterId])
+  @@index([dungeonId])
+  @@index([completedAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CLASS CHANGE HISTORY
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ClassChangeHistory {
+  id          String @id @default(cuid())
+  characterId String
+  
+  fromClassId String
+  toClassId   String
+  
+  // How the change happened
+  method String // "evolution", "token", "study_unlock"
+  
+  changedAt DateTime @default(now())
+  
+  @@index([characterId])
+  @@index([changedAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LEADERBOARD (Battle Rankings)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model BattleLeaderboard {
+  id          String @id @default(cuid())
+  characterId String
+  
+  // Period
+  period     String // "daily", "weekly", "monthly", "alltime"
+  periodStart DateTime
+  periodEnd   DateTime?
+  
+  // Stats
+  rank        Int
+  battlesWon  Int
+  battlesLost Int
+  winRate     Float
+  totalDamage Int
+  
+  calculatedAt DateTime @default(now())
+  
+  @@unique([characterId, period, periodStart])
+  @@index([period])
+  @@index([rank])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RELATION TO EXISTING STUDENT MODEL
+// Add this field to your existing Student model:
+// ─────────────────────────────────────────────────────────────────────────────
+
+// In your existing Student model, add:
+// battleCharacter BattleCharacter?

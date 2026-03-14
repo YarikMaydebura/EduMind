@@ -1,0 +1,30 @@
+{
+  "name": "edumind",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "lint:fix": "turbo lint:fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "clean": "turbo clean",
+    "db:generate": "pnpm --filter @edumind/database db:generate",
+    "db:migrate": "pnpm --filter @edumind/database db:migrate",
+    "db:seed": "pnpm --filter @edumind/database db:seed",
+    "db:studio": "pnpm --filter @edumind/database db:studio",
+    "db:reset": "pnpm --filter @edumind/database db:reset",
+    "db:push": "pnpm --filter @edumind/database db:push",
+    "dev:web": "pnpm --filter @edumind/web dev",
+    "dev:api": "pnpm --filter @edumind/api dev"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.8.1",
+    "turbo": "^2.8.16"
+  }
+}
