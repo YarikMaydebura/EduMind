@@ -1,8 +1,13 @@
-export default function StudentDashboard() {
-  return (
-    <div className="container py-8">
-      <h1 className="text-3xl font-bold">Student Dashboard</h1>
-      <p className="mt-2 text-muted-foreground">Welcome back, Student!</p>
-    </div>
-  );
+import type { Metadata } from 'next';
+
+import { requireRole } from '@/lib/auth/helpers';
+
+import { StudentDashboard } from './student-dashboard';
+
+export const metadata: Metadata = { title: 'Dashboard | EduMind AI' };
+
+export default async function StudentDashboardPage() {
+  await requireRole('STUDENT');
+
+  return <StudentDashboard />;
 }

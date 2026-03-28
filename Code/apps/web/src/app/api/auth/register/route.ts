@@ -39,7 +39,8 @@ export async function POST(req: Request) {
     const baseSlug = slugify(tenantName);
     const slug = `${baseSlug}-${Date.now().toString(36)}`;
 
-    const result = await db.$transaction(async (tx) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await db.$transaction(async (tx: any) => {
       const tenant = await tx.tenant.create({
         data: {
           name: tenantName,

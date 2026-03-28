@@ -332,10 +332,12 @@ model User {
   schoolAdmin    SchoolAdmin?
 
   // Relations
-  sessions         Session[]
-  sentMessages     Message[]        @relation("SentMessages")
-  receivedMessages Message[]        @relation("ReceivedMessages")
+  sessions          Session[]
+  sentMessages      Message[]        @relation("SentMessages")
+  receivedMessages  Message[]        @relation("ReceivedMessages")
   userNotifications Notification[]
+  createdInvites    Invite[]         @relation("CreatedInvites")
+  calendarEvents    CalendarEvent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -445,6 +447,8 @@ model Student {
   followers          StudentFollow[]  @relation("Following")
   following          StudentFollow[]  @relation("Followers")
   parents            ParentStudent[]
+
+  lessonAttendances LessonAttendance[]
 
   // Battle system
   battleCharacter BattleCharacter?
@@ -672,6 +676,7 @@ model LessonAttendance {
   lessonId String
   lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   present  Boolean   @default(true)
   joinedAt DateTime?
@@ -714,6 +719,7 @@ model Homework {
   bonusXpPerfect Int @default(20)
 
   attachments Json @default("[]")
+  rubric      Json?
 
   submissions HomeworkSubmission[]
 
@@ -739,6 +745,7 @@ model HomeworkSubmission {
   score      Int?
   percentage Float?
 
+  rubricScores    Json?
   teacherFeedback String?
   aiFeedback      String?
   aiSuggestions   Json?
@@ -1016,7 +1023,8 @@ model Invite {
   usedCount Int @default(0)
 
   expiresAt   DateTime
-  createdById String
+  createdById String?
+  createdBy   User?   @relation("CreatedInvites", fields: [createdById], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
 
@@ -1031,6 +1039,7 @@ model Invite {
 model CalendarEvent {
   id     String @id @default(cuid())
   userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   title       String
   description String?

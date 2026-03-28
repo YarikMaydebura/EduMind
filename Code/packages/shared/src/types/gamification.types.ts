@@ -41,3 +41,31 @@ export interface LevelProgress {
   needed: number;
   progress: number;
 }
+
+export interface LevelUpInfo {
+  previousLevel: number;
+  newLevel: number;
+  previousTitle: string;
+  newTitle: string;
+}
+
+export interface UnlockedAchievementInfo {
+  id: string;
+  name: string;
+  icon: string;
+  rarity: string;
+  xpReward: number;
+}
+
+export interface AwardXPResult {
+  xpAwarded: number;
+  previousLevel: number;
+  newLevel: number;
+  leveledUp: boolean;
+  newTitle: string | null;
+  gradeChanged: boolean;
+  newGrade: string | null;
+  achievementsUnlocked: UnlockedAchievementInfo[];
+  streakDays: number;
+  streakMilestoneXP: number;
+}

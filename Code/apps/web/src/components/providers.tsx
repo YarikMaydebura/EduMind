@@ -6,6 +6,7 @@ import { ThemeProvider } from 'next-themes';
 import { useState } from 'react';
 
 import { Toaster } from '@/components/ui/sonner';
+import { ThemeInitializer } from '@/components/theme-initializer';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -23,7 +24,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider
+          attribute="data-theme"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+          themes={[
+            'dark_modern',
+            'playful_colorful',
+            'corporate_professional',
+            'warm_friendly',
+            'system',
+          ]}
+        >
+          <ThemeInitializer />
           {children}
           <Toaster />
         </ThemeProvider>

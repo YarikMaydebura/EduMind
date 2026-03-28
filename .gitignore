@@ -35,11 +35,8 @@ Code/packages/database/prisma/migrations/
 npm-debug.log*
 pnpm-debug.log*
 
-# Documentation (keep only UML PDFs)
-Documentation/*.md
-Documentation/*.ts
-Documentation/UML/*.puml
-Documentation/UML/*.prisma
+# Documentation — exclude internal prompt file
+Documentation/CLAUDE_CODE_PROMPT.md
 
 # Local config
 .claude/
