@@ -1,4 +1,5 @@
 import { anthropic } from './client';
+import type { AiUsage } from './config';
 import { TASK_CONFIG } from './config';
 import { buildStudentTutorSystemPrompt } from './prompts';
 
@@ -25,7 +26,7 @@ export async function studentTutor(params: {
   subject: string;
   studentName: string;
   studentLevel: number;
-}): Promise<{ response: string } | null> {
+}): Promise<{ response: string; usage: AiUsage } | null> {
   try {
     const lastMessage = params.messages[params.messages.length - 1]?.content ?? '';
 
@@ -33,6 +34,7 @@ export async function studentTutor(params: {
       return {
         response:
           "I'm here to help you learn, not just give you answers! Let's work through this together. What part are you finding tricky? 😊",
+        usage: { input_tokens: 0, output_tokens: 0 },
       };
     }
 
@@ -52,7 +54,13 @@ export async function studentTutor(params: {
     });
 
     const text = response.content[0]?.type === 'text' ? response.content[0].text : '';
-    return { response: text };
+    return {
+      response: text,
+      usage: {
+        input_tokens: response.usage.input_tokens,
+        output_tokens: response.usage.output_tokens,
+      },
+    };
   } catch {
     return null;
   }

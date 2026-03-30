@@ -7,10 +7,10 @@
 | 1 | Foundation | 15 | 15 | ✅ Complete |
 | 2 | Core Academic | 41 | 41 | ✅ Complete |
 | 3 | Gamification | 56 | 56 | ✅ Complete |
-| 4 | AI Integration | 15 | 12 | 🟡 In Progress |
+| 4 | AI Integration | 15 | 15 | ✅ Complete |
 | 5 | Battle System | 25 | 0 | 🔴 Not Started |
 | 6 | Polish & Launch | 12 | 0 | 🔴 Not Started |
-| **Total** | | **164** | **124** | **76%** |
+| **Total** | | **164** | **127** | **77%** |
 
 **Legend:** ✅ Done | 🟡 In Progress | 🔴 Not Started | ⏸️ Blocked
 
@@ -214,13 +214,13 @@
 
 ## Phase 4: AI Integration (Week 7-8)
 
-### 4.1 AI Service Setup
+### 4.1 AI Service Setup ✅
 - [x] Create AI client (`apps/web/src/lib/ai/client.ts` — singleton)
 - [x] Configure AI models and task routing (`config.ts` — advanced/fast model selection)
-- [ ] Implement rate limiting
-- [x] Create usage tracking/logging (AiGenerationLog model exists)
-- [ ] Implement caching layer (Redis)
-- [ ] Create AI cost tracking
+- [x] Implement rate limiting (`withAiRoute` middleware — tenant-level + per-student daily cap)
+- [x] Create usage tracking/logging (AiGenerationLog model + automatic logging in middleware)
+- [x] Implement caching layer (DB-based via `StudentAiProfile.conversationContext`; Redis deferred)
+- [x] Create AI cost tracking (TOKEN_COSTS per model, auto-calculated and logged per request)
 
 ### 4.2 Lesson Plan Generator ✅
 - [x] Create lesson plan generation prompt (`prompts.ts`)
@@ -243,15 +243,15 @@
 - [x] Implement quiz preview (question list with answers highlighted)
 - [x] Add question editing before save
 
-### 4.5 Student Tutor
+### 4.5 Student Tutor ✅
 - [x] Create tutoring chat prompt (`student-tutor.ts` with safety filters)
 - [x] Implement chat API endpoint (`/api/ai/student/chat`)
 - [x] Create chat UI component (full chat with typing indicator, bouncing dots)
 - [x] Implement context awareness (subject selector, student level personalization)
-- [ ] Add conversation history (database persistence)
-- [ ] Implement rate limiting per student
+- [x] Add conversation history (per-subject DB persistence via `StudentAiProfile.conversationContext`, max 20 messages/subject)
+- [x] Implement rate limiting per student (50 requests/day via `AiGenerationLog` count)
 
-**Phase 4 Completion:** 12/15 tasks (remaining: rate limiting, caching, conversation history)
+**Phase 4 Completion:** 15/15 tasks ✅
 
 ---
 
@@ -500,6 +500,6 @@ PADDLE_API_KEY=
 
 ---
 
-**Last Updated:** March 23, 2026
-**Current Phase:** 4 🟡 In Progress (12/15)
-**Overall Progress:** 124/164 (76%)
+**Last Updated:** March 28, 2026
+**Current Phase:** 4 ✅ Complete
+**Overall Progress:** 127/164 (77%)

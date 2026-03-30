@@ -1,46 +1,37 @@
-import { NextResponse } from 'next/server';
-
-import { requireAuth } from '@/lib/auth/helpers';
 import { generateQuiz } from '@/lib/ai/generate-quiz';
 import type { Difficulty, QuestionType } from '@/lib/ai/generate-quiz';
+import { withAiRoute } from '@/lib/ai/middleware';
 
 export async function POST(req: Request) {
-  try {
-    const session = await requireAuth();
+  return withAiRoute(req, {
+    type: 'quiz_generation',
+    allowedRoles: ['TEACHER', 'TECH_ADMIN', 'SCHOOL_ADMIN'],
+    handler: async (body) => {
+      const { subject, gradeYear, topic, numQuestions, difficulty, questionTypes } = body as {
+        subject: string;
+        gradeYear: string;
+        topic: string;
+        numQuestions?: number;
+        difficulty?: Difficulty;
+        questionTypes?: QuestionType[];
+      };
 
-    const isTeacherOrAdmin = ['TEACHER', 'TECH_ADMIN', 'SCHOOL_ADMIN'].includes(session.user.role);
-    if (!isTeacherOrAdmin) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
+      if (!subject || !gradeYear || !topic) {
+        throw new Error('Missing required fields: subject, gradeYear, topic');
+      }
 
-    const body = await req.json() as {
-      subject: string;
-      gradeYear: string;
-      topic: string;
-      numQuestions?: number;
-      difficulty?: Difficulty;
-      questionTypes?: QuestionType[];
-    };
+      const result = await generateQuiz({
+        subject,
+        gradeYear,
+        topic,
+        numQuestions: numQuestions ?? 10,
+        difficulty: difficulty ?? 'MEDIUM',
+        questionTypes: questionTypes ?? ['MULTIPLE_CHOICE'],
+      });
 
-    if (!body.subject || !body.gradeYear || !body.topic) {
-      return NextResponse.json({ message: 'Missing required fields: subject, gradeYear, topic' }, { status: 400 });
-    }
+      if (!result) return null;
 
-    const questions = await generateQuiz({
-      subject: body.subject,
-      gradeYear: body.gradeYear,
-      topic: body.topic,
-      numQuestions: body.numQuestions ?? 10,
-      difficulty: body.difficulty ?? 'MEDIUM',
-      questionTypes: body.questionTypes ?? ['MULTIPLE_CHOICE'],
-    });
-
-    if (!questions) {
-      return NextResponse.json({ message: 'AI generation failed. Please try again.' }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true, data: questions });
-  } catch {
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
-  }
+      return { response: result.questions, usage: result.usage };
+    },
+  });
 }

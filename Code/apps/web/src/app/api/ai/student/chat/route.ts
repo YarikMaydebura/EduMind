@@ -1,50 +1,57 @@
-import { NextResponse } from 'next/server';
-
-import { requireAuth } from '@/lib/auth/helpers';
 import { db } from '@/lib/db';
+import { loadConversationHistory, saveConversationHistory } from '@/lib/ai/conversation-history';
+import { withAiRoute } from '@/lib/ai/middleware';
 import { studentTutor } from '@/lib/ai/student-tutor';
-import type { ChatMessage } from '@/lib/ai/student-tutor';
 
 export async function POST(req: Request) {
-  try {
-    const session = await requireAuth();
+  return withAiRoute(req, {
+    type: 'student_qa',
+    allowedRoles: ['STUDENT'],
+    handler: async (body, ctx) => {
+      const message = body.message as string | undefined;
+      const subject = body.subject as string | undefined;
 
-    if (session.user.role !== 'STUDENT') {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
+      if (!message?.trim()) {
+        throw new Error('message is required');
+      }
+      if (!subject) {
+        throw new Error('subject is required');
+      }
 
-    const body = await req.json() as {
-      messages: ChatMessage[];
-      subject: string;
-    };
+      // Fetch student profile for personalization
+      const student = await db.student.findUnique({
+        where: { userId: ctx.userId },
+        select: { id: true, overallLevel: true, user: { select: { firstName: true } } },
+      });
 
-    if (!body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
-      return NextResponse.json({ message: 'messages array is required' }, { status: 400 });
-    }
+      if (!student) {
+        throw new Error('Student profile not found');
+      }
 
-    if (!body.subject) {
-      return NextResponse.json({ message: 'subject is required' }, { status: 400 });
-    }
+      // Load existing conversation history
+      const history = await loadConversationHistory(student.id, subject);
 
-    // Fetch student level for personalisation
-    const student = await db.student.findUnique({
-      where: { userId: session.user.id },
-      select: { overallLevel: true, user: { select: { firstName: true } } },
-    });
+      // Append the new user message
+      history.push({ role: 'user', content: message });
 
-    const result = await studentTutor({
-      messages: body.messages,
-      subject: body.subject,
-      studentName: student?.user.firstName ?? 'Student',
-      studentLevel: student?.overallLevel ?? 1,
-    });
+      // Call AI tutor
+      const result = await studentTutor({
+        messages: history,
+        subject,
+        studentName: student.user.firstName ?? 'Student',
+        studentLevel: student.overallLevel ?? 1,
+      });
 
-    if (!result) {
-      return NextResponse.json({ message: 'AI tutor is unavailable. Please try again.' }, { status: 500 });
-    }
+      if (!result) return null;
 
-    return NextResponse.json({ success: true, data: result });
-  } catch {
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
-  }
+      // Append assistant response and save
+      history.push({ role: 'assistant', content: result.response });
+      await saveConversationHistory(student.id, subject, history);
+
+      return {
+        response: { response: result.response },
+        usage: result.usage,
+      };
+    },
+  });
 }

@@ -1,36 +1,40 @@
-import { NextResponse } from 'next/server';
-
-import { requireAuth } from '@/lib/auth/helpers';
 import { suggestGrade } from '@/lib/ai/suggest-grade';
+import { withAiRoute } from '@/lib/ai/middleware';
 
 export async function POST(req: Request) {
-  try {
-    const session = await requireAuth();
+  return withAiRoute(req, {
+    type: 'homework_check',
+    allowedRoles: ['TEACHER', 'TECH_ADMIN', 'SCHOOL_ADMIN'],
+    handler: async (body) => {
+      const { homeworkId, studentId, instructions, content, maxScore, rubric, subject, topic } = body as {
+        homeworkId: string;
+        studentId: string;
+        instructions: string;
+        content: string;
+        maxScore: number;
+        rubric?: unknown;
+        subject?: string;
+        topic?: string;
+      };
 
-    if (!['TEACHER', 'TECH_ADMIN', 'SCHOOL_ADMIN'].includes(session.user.role)) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
+      if (!homeworkId || !studentId || !instructions || !content || !maxScore) {
+        throw new Error('Missing required fields');
+      }
 
-    const body = await req.json();
-    const { homeworkId, studentId, instructions, content, maxScore, rubric, subject, topic } = body;
+      const result = await suggestGrade({
+        homeworkId,
+        studentId,
+        instructions,
+        content,
+        maxScore,
+        rubric: rubric as Parameters<typeof suggestGrade>[0]['rubric'],
+        subject,
+        topic,
+      });
 
-    if (!homeworkId || !studentId || !instructions || !content || !maxScore) {
-      return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
-    }
+      if (!result) return null;
 
-    const suggestion = await suggestGrade({
-      homeworkId,
-      studentId,
-      instructions,
-      content,
-      maxScore,
-      rubric,
-      subject,
-      topic,
-    });
-
-    return NextResponse.json({ success: true, data: suggestion });
-  } catch {
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
-  }
+      return { response: result.suggestion, usage: result.usage };
+    },
+  });
 }

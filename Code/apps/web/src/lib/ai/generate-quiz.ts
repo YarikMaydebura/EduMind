@@ -1,4 +1,5 @@
 import { anthropic } from './client';
+import type { AiUsage } from './config';
 import { TASK_CONFIG } from './config';
 import { buildQuizPrompt } from './prompts';
 
@@ -21,7 +22,7 @@ export async function generateQuiz(params: {
   numQuestions: number;
   difficulty: Difficulty;
   questionTypes: QuestionType[];
-}): Promise<GeneratedQuestion[] | null> {
+}): Promise<{ questions: GeneratedQuestion[]; usage: AiUsage } | null> {
   try {
     const prompt = buildQuizPrompt(params);
     const { model, maxTokens } = TASK_CONFIG.quiz_generation;
@@ -36,8 +37,14 @@ export async function generateQuiz(params: {
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return null;
 
-    const questions = JSON.parse(jsonMatch[0]) as GeneratedQuestion[];
-    return questions.slice(0, params.numQuestions);
+    const questions = (JSON.parse(jsonMatch[0]) as GeneratedQuestion[]).slice(0, params.numQuestions);
+    return {
+      questions,
+      usage: {
+        input_tokens: response.usage.input_tokens,
+        output_tokens: response.usage.output_tokens,
+      },
+    };
   } catch {
     return null;
   }

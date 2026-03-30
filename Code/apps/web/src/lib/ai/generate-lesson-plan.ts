@@ -1,4 +1,5 @@
 import { anthropic } from './client';
+import type { AiUsage } from './config';
 import { TASK_CONFIG } from './config';
 import { buildLessonPlanPrompt } from './prompts';
 
@@ -31,7 +32,7 @@ export async function generateLessonPlan(params: {
   classSize: number;
   previousTopics?: string[];
   objectives?: string[];
-}): Promise<GeneratedLessonPlan | null> {
+}): Promise<{ plan: GeneratedLessonPlan; usage: AiUsage } | null> {
   try {
     const prompt = buildLessonPlanPrompt(params);
     const { model, maxTokens } = TASK_CONFIG.lesson_plan;
@@ -46,7 +47,13 @@ export async function generateLessonPlan(params: {
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return null;
 
-    return JSON.parse(jsonMatch[0]) as GeneratedLessonPlan;
+    return {
+      plan: JSON.parse(jsonMatch[0]) as GeneratedLessonPlan,
+      usage: {
+        input_tokens: response.usage.input_tokens,
+        output_tokens: response.usage.output_tokens,
+      },
+    };
   } catch {
     return null;
   }

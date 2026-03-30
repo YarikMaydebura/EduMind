@@ -1,6 +1,7 @@
 import type { RubricCriterion } from '@edumind/shared';
 
 import { anthropic } from './client';
+import type { AiUsage } from './config';
 import { TASK_CONFIG } from './config';
 import { buildHomeworkCheckPrompt } from './prompts';
 
@@ -22,7 +23,7 @@ export async function suggestGrade(params: {
   content: string;
   maxScore: number;
   rubric?: RubricCriterion[];
-}): Promise<AiGradeSuggestion | null> {
+}): Promise<{ suggestion: AiGradeSuggestion; usage: AiUsage } | null> {
   try {
     const prompt = buildHomeworkCheckPrompt({
       subject: params.subject ?? 'General',
@@ -59,10 +60,16 @@ export async function suggestGrade(params: {
     };
 
     return {
-      score: Math.min(Math.max(0, Math.round(parsed.score)), params.maxScore),
-      feedback: parsed.feedback ?? '',
-      rubricScores: parsed.rubricScores,
-      confidence: Math.min(1, Math.max(0, parsed.confidence ?? 0.8)),
+      suggestion: {
+        score: Math.min(Math.max(0, Math.round(parsed.score)), params.maxScore),
+        feedback: parsed.feedback ?? '',
+        rubricScores: parsed.rubricScores,
+        confidence: Math.min(1, Math.max(0, parsed.confidence ?? 0.8)),
+      },
+      usage: {
+        input_tokens: response.usage.input_tokens,
+        output_tokens: response.usage.output_tokens,
+      },
     };
   } catch {
     return null;
