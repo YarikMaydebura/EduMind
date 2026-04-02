@@ -151,6 +151,7 @@ enum NotificationType {
   SYSTEM
   PARENT_ALERT
   BATTLE_AWAKENING
+  SKILL_UNLOCKED
 }
 
 enum ActivityType {

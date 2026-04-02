@@ -253,6 +253,23 @@ export function CharacterProfile() {
         </Card>
       )}
 
+      {/* Equipped Skills */}
+      <Card className="mt-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Equipped Skills</CardTitle>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/s/character/skills">Manage Skills</Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-xs text-muted-foreground">
+            Visit the Skills page to learn and equip up to 6 skills for battle.
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Actions */}
       <div className="mt-6 flex gap-3">
         <Button variant="outline" asChild className="flex-1">

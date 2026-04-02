@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { hashSync } from 'bcryptjs';
 
 import { seedCharacterClasses } from './seed-character-classes';
+import { seedSkills } from './seed-skills';
 
 const prisma = new PrismaClient();
 
@@ -286,6 +287,9 @@ async function main() {
 
   // Seed character classes
   await seedCharacterClasses(prisma);
+
+  // Seed skills (must run after character classes for Mythic exclusive class linking)
+  await seedSkills(prisma);
 }
 
 main()

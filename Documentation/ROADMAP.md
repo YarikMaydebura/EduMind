@@ -8,9 +8,9 @@
 | 2 | Core Academic | 41 | 41 | ✅ Complete |
 | 3 | Gamification | 56 | 56 | ✅ Complete |
 | 4 | AI Integration | 15 | 15 | ✅ Complete |
-| 5 | Battle System | 25 | 16 | 🟡 In Progress |
+| 5 | Battle System | 25 | 24 | 🟡 In Progress |
 | 6 | Polish & Launch | 12 | 0 | 🔴 Not Started |
-| **Total** | | **164** | **143** | **87%** |
+| **Total** | | **164** | **151** | **92%** |
 
 **Legend:** ✅ Done | 🟡 In Progress | 🔴 Not Started | ⏸️ Blocked
 
@@ -277,15 +277,15 @@
 - [x] Implement class evolution checking (`GET/POST /api/characters/evolution` — unlock validation, KP cost, stat recalculation)
 - [x] Create evolution UI flow (`/s/character/evolve` — select → confirm → success + `/s/character/classes` browser)
 
-### 5.3 Skill System
-- [ ] Seed all 156 skills to database
-- [ ] Create skill unlock checking service
-- [ ] Implement skill learning API
-- [ ] Create skill equip/unequip API
-- [ ] Implement skill slot management (max 6)
-- [ ] Create skills page UI
-- [ ] Implement skill details modal
-- [ ] Create skill unlock notifications
+### 5.3 Skill System ✅
+- [x] Seed all 156 skills to database (`seed-skills.ts` — Common 50, Uncommon 40, Rare 30, Epic 20, Legendary 10, Mythic 6)
+- [x] Create skill unlock checking service (`skill-unlock.ts` — reuses `getStudentProgressData`, adds `classRarity` + `exclusiveClass` conditions)
+- [x] Implement skill learning API (`POST /api/skills/learn` — validates unlock requirements, creates `CharacterSkill`)
+- [x] Create skill equip/unequip API (`POST /api/skills/equip` — slot 1-6, swap if occupied)
+- [x] Implement skill slot management (max 6 enforced via `MAX_EQUIPPED_SKILLS` constant)
+- [x] Create skills page UI (`/s/character/skills` — My Skills + All Skills tabs, type filters)
+- [x] Implement skill details modal (`SkillDetailModal` — stats, requirements, learn/equip actions)
+- [x] Create skill unlock notifications (`SKILL_UNLOCKED` notification type added to schema)
 
 ### 5.4 Battle Engine
 - [ ] Create battle initialization service
@@ -328,7 +328,7 @@
 - [ ] Implement item usage
 - [ ] Create equipment system
 
-**Phase 5 Completion:** 16/25 tasks (5.1 ✅, 5.2 ✅)
+**Phase 5 Completion:** 24/25 tasks (5.1 ✅, 5.2 ✅, 5.3 ✅)
 
 ---
 
@@ -759,5 +759,5 @@ PADDLE_API_KEY=
 ---
 
 **Last Updated:** April 2, 2026
-**Current Phase:** 5 🟡 In Progress (16/25) + UI Redesign Track (0/72)
-**Overall Progress:** 143/236 (61% including UI track)
+**Current Phase:** 5 🟡 In Progress (24/25) + UI Redesign Track (0/72)
+**Overall Progress:** 151/236 (64% including UI track)
