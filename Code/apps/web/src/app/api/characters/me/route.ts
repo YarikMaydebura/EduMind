@@ -29,6 +29,7 @@ export async function GET() {
                 rarity: true,
                 description: true,
                 passives: true,
+                abilities: true,
               },
             },
           },

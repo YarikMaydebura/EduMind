@@ -19,10 +19,11 @@ export function calculateBattleStats(
     }
   }
 
+  // Apply class passive bonuses as percentage multipliers (e.g., 0.05 = +5%)
   if (classBonus) {
     for (const [attr, bonus] of Object.entries(classBonus) as [Attribute, number][]) {
-      if (attr in stats) {
-        stats[attr] += bonus;
+      if (attr in stats && bonus > 0) {
+        stats[attr] = Math.floor(stats[attr] * (1 + bonus));
       }
     }
   }
@@ -32,6 +33,20 @@ export function calculateBattleStats(
   }
 
   return stats;
+}
+
+export function calculateStatsWithClass(
+  subjectAverages: Record<string, number>,
+  passives: Record<string, number>,
+): { base: BattleAttributes; withClass: BattleAttributes; diff: Partial<BattleAttributes> } {
+  const base = calculateBattleStats(subjectAverages);
+  const withClass = calculateBattleStats(subjectAverages, passives as Partial<BattleAttributes>);
+  const diff: Partial<BattleAttributes> = {};
+  for (const attr of Object.keys(base) as Attribute[]) {
+    const d = withClass[attr] - base[attr];
+    if (d !== 0) diff[attr] = d;
+  }
+  return { base, withClass, diff };
 }
 
 export function calculateDerivedStats(stats: BattleAttributes): DerivedStats {

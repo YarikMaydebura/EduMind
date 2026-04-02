@@ -5,6 +5,7 @@ import { Loader2, Shield, Sparkles, Swords, Target, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+import { ClassAbilities } from '@/components/gamification/class-abilities';
 import { StatBar } from '@/components/gamification/stat-bar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,8 @@ interface CharacterData {
     rarity: string;
     description: string;
     passives: Record<string, number>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    abilities: any[] | null;
   };
   stats: Record<string, number>;
   liveStats: Record<string, number>;
@@ -237,6 +240,31 @@ export function CharacterProfile() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Abilities (Epic+ classes) */}
+      {data.class.abilities && (data.class.abilities as unknown[]).length > 0 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-base">Abilities</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ClassAbilities abilities={data.class.abilities as Array<{ name: string; description: string; type: 'passive' | 'active'; icon: string; effects: string }>} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Actions */}
+      <div className="mt-6 flex gap-3">
+        <Button variant="outline" asChild className="flex-1">
+          <Link href="/s/character/classes">Browse Classes</Link>
+        </Button>
+        <Button asChild className="flex-1">
+          <Link href="/s/character/evolve">
+            <Zap className="mr-2 h-4 w-4" />
+            Evolve
+          </Link>
+        </Button>
+      </div>
     </motion.div>
   );
 }

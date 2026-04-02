@@ -8,9 +8,9 @@
 | 2 | Core Academic | 41 | 41 | ✅ Complete |
 | 3 | Gamification | 56 | 56 | ✅ Complete |
 | 4 | AI Integration | 15 | 15 | ✅ Complete |
-| 5 | Battle System | 25 | 9 | 🟡 In Progress |
+| 5 | Battle System | 25 | 16 | 🟡 In Progress |
 | 6 | Polish & Launch | 12 | 0 | 🔴 Not Started |
-| **Total** | | **164** | **136** | **83%** |
+| **Total** | | **164** | **143** | **87%** |
 
 **Legend:** ✅ Done | 🟡 In Progress | 🔴 Not Started | ⏸️ Blocked
 
@@ -267,15 +267,15 @@
 - [x] Create character stats calculation service (`getStudentSubjectAverages()` + `calculateBattleStats()` from shared)
 - [x] Implement character profile page (`/s/character` — stats bars, derived stats, battle record, KP, class info)
 
-### 5.2 Class System
+### 5.2 Class System ✅
 - [x] Seed all 96 classes to database (`seed-character-classes.ts` — 16 per theme × 6 themes)
-- [ ] Create class unlock checking service
-- [ ] Implement class details API
-- [ ] Create class preview component
-- [ ] Implement passive bonus application
-- [ ] Create class abilities system
-- [ ] Implement class evolution checking
-- [ ] Create evolution UI flow
+- [x] Create class unlock checking service (`class-unlock.ts` — `getStudentProgressData`, `checkClassUnlock`, `getEvolutionOptions`)
+- [x] Implement class details API (`GET /api/characters/classes/[classId]` — evolution chain, requirements, stat preview)
+- [x] Create class preview components (`class-card.tsx`, `stat-comparison.tsx`, `evolution-chain.tsx`)
+- [x] Implement passive bonus application (fixed `calculateBattleStats` — multiplicative % not additive, added `calculateStatsWithClass`)
+- [x] Create class abilities system (abilities JSON on 30 Epic+ classes, `ClassAbilities` component)
+- [x] Implement class evolution checking (`GET/POST /api/characters/evolution` — unlock validation, KP cost, stat recalculation)
+- [x] Create evolution UI flow (`/s/character/evolve` — select → confirm → success + `/s/character/classes` browser)
 
 ### 5.3 Skill System
 - [ ] Seed all 156 skills to database
@@ -328,7 +328,7 @@
 - [ ] Implement item usage
 - [ ] Create equipment system
 
-**Phase 5 Completion:** 9/25 tasks (5.1 complete, 5.2 partial)
+**Phase 5 Completion:** 16/25 tasks (5.1 ✅, 5.2 ✅)
 
 ---
 
@@ -476,6 +476,27 @@
 **Blockers:**
 - None
 
+### Session 4 — Date: April 2, 2026
+**Completed:**
+- Phase 5.2 (Class System) — all 7 remaining tasks:
+  - Fixed `calculateBattleStats` passive bug (was additive, now multiplicative %)
+  - Added `calculateStatsWithClass()` for stat comparison (base vs with-class)
+  - Evolution constants: KP costs (50→3000), rarity labels/colors/order
+  - Updated seed: 72 `evolvesFrom` chains + 30 abilities on Epic/Legendary/Mythic classes
+  - Class unlock service: `getStudentProgressData()`, `checkClassUnlock()`, `getEvolutionOptions()`
+  - API: expanded `/api/characters/classes` (all rarities), `/api/characters/classes/[id]` (detail), `/api/characters/evolution` (GET+POST)
+  - UI components: `class-card`, `class-abilities`, `stat-comparison`, `evolution-chain`
+  - Pages: class browser (`/s/character/classes`), class detail (`/s/character/classes/[id]`), evolution flow (`/s/character/evolve`)
+  - Updated character profile with abilities section + evolution/browse buttons
+- Added UI Redesign Track to ROADMAP (72 tasks across UI-1/UI-2/UI-3 phases)
+
+**Next Steps:**
+- Phase 5.3: Skill System (156 skills, equip/unequip, mastery)
+- Phase 5.4: Battle Engine
+
+**Blockers:**
+- None
+
 ---
 
 ## Environment Variables
@@ -512,6 +533,218 @@ PADDLE_API_KEY=
 
 ---
 
+## UI Redesign Track
+
+> **Reference**: All specs in [EDUMIND_IMPLEMENTATION_GUIDE.md](./Design/EDUMIND_IMPLEMENTATION_GUIDE.md)
+>
+> This is a parallel track implementing the new 5-theme design system (Dark Fantasy, Ghibli, Bright, Pixel, Cyberpunk) with 9 screen redesigns and gamified RPG-style components. Runs alongside the backend feature phases.
+
+### Implementation Rules
+- All colors via CSS variables (`var(--accent)`, `var(--text)`, etc.) — never hardcode
+- Border radius via `var(--radius)` — changes per theme (0px–16px)
+- Ghibli and Bright themes have **light backgrounds** — ensure dark text on buttons (`--btn-text`)
+- Cyberpunk theme needs scanlines, glitch effects, angular `clip-path` corners
+- Follow file structure from Guide Section 3
+
+### UI Redesign Progress
+
+| Phase | Name | Tasks | Done | Status |
+|-------|------|-------|------|--------|
+| UI-1 | Foundation | 16 | 0 | 🔴 Not Started |
+| UI-2 | Screens | 43 | 0 | 🔴 Not Started |
+| UI-3 | Polish & Testing | 13 | 0 | 🔴 Not Started |
+| **Total** | | **72** | **0** | **0%** |
+
+---
+
+### UI-1: Foundation (Week 1-2)
+
+#### UI-1.1 Theme System Setup
+
+| Task | Description | Time | Deps | Guide Ref |
+|------|-------------|------|------|-----------|
+| UI-1.1.1 | Create `globals.css` with CSS variables for all 5 themes (dark, ghibli, bright, pixel, cyber) — replace current 4-theme system | 2h | — | §5.2 |
+| UI-1.1.2 | Create `lib/themes.ts` with `ThemeName` type, `Theme` interface, and `themes` record for all 5 themes | 1h | UI-1.1.1 | §5.1 |
+| UI-1.1.3 | Build `ThemeProvider` component with `data-theme` attribute on `<html>`, localStorage persistence | 2h | UI-1.1.2 | §5.3 |
+| UI-1.1.4 | Add Cyberpunk special effects: scanlines overlay, `.cyber-card` clip-path, `.glitch-text` animation | 1h | UI-1.1.1 | §5.2 |
+| UI-1.1.5 | Configure fonts: Rajdhani (Dark), Nunito (Ghibli), Inter (Bright), monospace (Pixel), Orbitron (Cyber) | 1h | — | §4.1 |
+
+#### UI-1.2 Base UI Components
+
+| Task | Description | Time | Deps | Guide Ref |
+|------|-------------|------|------|-----------|
+| UI-1.2.1 | Build `Button` with variants: primary, secondary, danger, ghost — all using CSS variables | 2h | UI-1.1.1 | §6.1 |
+| UI-1.2.2 | Build `Card` with default + `cyber` variant (clip-path corners) | 1h | UI-1.1.1 | §6.1 |
+| UI-1.2.3 | Build `XPBar` (sm/md/lg sizes) with accent color fill and text label | 1h | UI-1.1.1 | §6.1 |
+| UI-1.2.4 | Build `LevelBadge` (sm/md/lg) — circular badge with `--btn-bg`/`--btn-text` | 30m | UI-1.1.1 | §6.1 |
+| UI-1.2.5 | Build `StatBar` for HP/ATK/DEF/SPD — label, bar, value | 1h | UI-1.1.1 | §6.1 |
+| UI-1.2.6 | Build `Toggle` switch using `--accent` and `--border` variables | 1h | UI-1.1.1 | §6.1 |
+| UI-1.2.7 | Build `RarityBorder` with 6 tiers: Common→Mythic (glow, animated rainbow for Mythic) | 2h | UI-1.1.1 | §8 |
+
+#### UI-1.3 Layout Components
+
+| Task | Description | Time | Deps | Guide Ref |
+|------|-------------|------|------|-----------|
+| UI-1.3.1 | Build `Sidebar` (180px, `--bg2` background, active item highlight, notification badge) | 2h | UI-1.2.1 | §6.2 |
+| UI-1.3.2 | Build `DashboardLayout` wrapper (sidebar + main content area) | 1h | UI-1.3.1 | §3 |
+| UI-1.3.3 | Build `MobileNav` — bottom navigation bar (hidden on desktop, 5 icons) | 2h | UI-1.2.1 | §10.3 |
+| UI-1.3.4 | Build `ThemeSwitcher` — 5 theme preview buttons for Settings page | 1h | UI-1.1.3 | §7.8 |
+
+**UI-1 Total: ~19.5 hours | 16 tasks**
+
+---
+
+### UI-2: Screen Implementation (Week 2-4)
+
+#### UI-2.1 Dashboard Screen
+
+| Task | Description | Time | Deps | Guide Ref |
+|------|-------------|------|------|-----------|
+| UI-2.1.1 | Build `CharacterCard` — avatar with level ring, XP bar, radar chart placeholder, battle power stat | 3h | UI-1.2.* | §7.1 |
+| UI-2.1.2 | Build `QuickStats` — 6 stat cards in responsive grid (Total XP, Level, Avg Grade, Battles Won, Streak, Rank) | 2h | UI-1.2.2 | §7.1 |
+| UI-2.1.3 | Build `TodaySchedule` — time-based schedule entries with subject color dots | 2h | UI-1.2.2 | §7.1 |
+| UI-2.1.4 | Build `ClassesGrid` — subject cards with grades, XP bars, level badges | 2h | UI-1.2.2, UI-1.2.3 | §7.1 |
+| UI-2.1.5 | Build `UpcomingDeadlines` — deadline list with urgency color indicators | 1h | UI-1.2.2 | §7.1 |
+| UI-2.1.6 | Build `DailyQuests` — checklist with XP rewards and progress bar | 2h | UI-1.2.2, UI-1.2.3 | §7.1 |
+| UI-2.1.7 | Assemble Dashboard page with 2-column layout, all components | 2h | UI-2.1.1–6 | §7.1 |
+
+#### UI-2.2 Character Class Selection Screen
+
+| Task | Description | Time | Deps | Guide Ref |
+|------|-------------|------|------|-----------|
+| UI-2.2.1 | Build `ClassCard` — character preview with rarity border, lock/unlock/equipped states | 2h | UI-1.2.7 | §7.2 |
+| UI-2.2.2 | Build `ClassCarousel` — horizontal scrolling row per theme category | 3h | UI-2.2.1 | §7.2 |
+| UI-2.2.3 | Build `ClassDetailModal` — full details: abilities, requirements, passive bonuses, evolution path | 3h | UI-2.2.1 | §7.2 |
+| UI-2.2.4 | Assemble Character page with 6 category rows (Fantasy, Anime, Cyberpunk, Military, Sci-Fi, Steampunk) | 2h | UI-2.2.1–3 | §7.2 |
+
+#### UI-2.3 Subject Page Screen
+
+| Task | Description | Time | Deps | Guide Ref |
+|------|-------------|------|------|-----------|
+| UI-2.3.1 | Build `SubjectHeader` — icon, name, teacher, level badge, grade badge | 2h | UI-1.2.4 | §7.3 |
+| UI-2.3.2 | Build `SubjectTabs` — Overview, Lessons, Homework, Quizzes, Grades tabs | 2h | — | §7.3 |
+| UI-2.3.3 | Build `GradeBreakdown` — visual weight bars (Level 30%, Homework 35%, Quiz 35%) | 2h | UI-1.2.5 | §7.3 |
+| UI-2.3.4 | Build `HomeworkList` — pending/completed with XP rewards and status badges | 2h | UI-1.2.2, UI-1.2.3 | §7.3 |
+| UI-2.3.5 | Build `QuizList` — upcoming/completed with scores and time remaining | 2h | UI-1.2.2 | §7.3 |
+| UI-2.3.6 | Assemble Subject page with all tabs wired to data | 2h | UI-2.3.1–5 | §7.3 |
+
+#### UI-2.4 Battle Arena Screen
+
+| Task | Description | Time | Deps | Guide Ref |
+|------|-------------|------|------|-----------|
+| UI-2.4.1 | Build `ArenaHub` — Quick Match and Ranked Battle mode cards | 2h | UI-1.2.1, UI-1.2.2 | §7.4 |
+| UI-2.4.2 | Build `FighterCard` — HP/ATK/DEF/SPD stat bars with battle power number | 2h | UI-1.2.5 | §7.4 |
+| UI-2.4.3 | Build `BattleScreen` — opponent top, player bottom, skill buttons, HP/MP/STA bars, turn counter | 4h | UI-1.2.1, UI-1.2.5 | §7.4 |
+| UI-2.4.4 | Build `BattleHistory` — win/loss records with XP earned, opponent details | 2h | UI-1.2.2 | §7.4 |
+| UI-2.4.5 | Build `Leaderboard` — ranked player list with highlight for current user | 2h | UI-1.2.2 | §7.4 |
+| UI-2.4.6 | Assemble Battle Arena with tabs: Hub, Battle, History, Leaderboard | 2h | UI-2.4.1–5 | §7.4 |
+
+#### UI-2.5 Student Profile Screen
+
+| Task | Description | Time | Deps | Guide Ref |
+|------|-------------|------|------|-----------|
+| UI-2.5.1 | Build `ProfileHeader` — banner image, avatar with XP ring, level badge, character class label | 3h | UI-1.2.3, UI-1.2.4 | §7.6 |
+| UI-2.5.2 | Build `StatsGrid` — 6 stats (Total XP, Level, Avg Grade, Battles Won, Streak, Rank) | 2h | UI-1.2.2 | §7.6 |
+| UI-2.5.3 | Build `AchievementBadges` — 6 recent badges preview with rarity borders | 2h | UI-1.2.7 | §7.6 |
+| UI-2.5.4 | Build `PersonalInfo` — editable user details card (name, email, school) | 2h | UI-1.2.2, UI-1.2.1 | §7.6 |
+| UI-2.5.5 | Build `FriendsList` — online/offline status dots, battle challenge button | 2h | UI-1.2.1, UI-1.2.2 | §7.6 |
+| UI-2.5.6 | Build `ActivityFeed` — recent XP-earning activities with icons and timestamps | 2h | UI-1.2.2 | §7.6 |
+| UI-2.5.7 | Assemble Profile page with all sections | 2h | UI-2.5.1–6 | §7.6 |
+
+#### UI-2.6 Achievements Screen
+
+| Task | Description | Time | Deps | Guide Ref |
+|------|-------------|------|------|-----------|
+| UI-2.6.1 | Build `AchievementHeader` — unlocked/total count, completion percentage | 1h | UI-1.2.2 | §7.7 |
+| UI-2.6.2 | Build `OverallProgress` — progress bar with milestone markers | 2h | UI-1.2.3 | §7.7 |
+| UI-2.6.3 | Build `CategoryTabs` — All, Combat, Academic, Social, Special filter tabs | 1h | UI-1.2.1 | §7.7 |
+| UI-2.6.4 | Build `AchievementCard` — icon, rarity border, name, description, progress bar, XP reward, lock state | 3h | UI-1.2.7 | §7.7 |
+| UI-2.6.5 | Assemble Achievements page with grid layout and category filters | 2h | UI-2.6.1–4 | §7.7 |
+
+#### UI-2.7 Settings Screen
+
+| Task | Description | Time | Deps | Guide Ref |
+|------|-------------|------|------|-----------|
+| UI-2.7.1 | Build `SettingCard` — section container with title and divider | 1h | UI-1.2.2 | §7.8 |
+| UI-2.7.2 | Build `SettingRow` — label, description, and control (toggle/select/slider) | 1h | — | §7.8 |
+| UI-2.7.3 | Build `ThemeSelector` — 5 theme preview buttons with active indicator | 2h | UI-1.3.4 | §7.8 |
+| UI-2.7.4 | Build `VolumeSlider` — range input with percentage display | 1h | — | §7.8 |
+| UI-2.7.5 | Build Settings sections: Appearance, Notifications, Account, Privacy, Sound, Danger Zone | 3h | UI-2.7.1–4 | §7.8 |
+| UI-2.7.6 | Assemble Settings page with all sections | 1h | UI-2.7.5 | §7.8 |
+
+#### UI-2.8 Notifications Center Screen
+
+| Task | Description | Time | Deps | Guide Ref |
+|------|-------------|------|------|-----------|
+| UI-2.8.1 | Build `NotificationHeader` — Mark All Read button, Clear All button | 1h | UI-1.2.1 | §7.9 |
+| UI-2.8.2 | Build `FilterTabs` — All, Unread, Battles, Academic, Social, System | 1h | UI-1.2.1 | §7.9 |
+| UI-2.8.3 | Build `NotificationItem` — icon, title, description, time, actions, unread/urgent states | 3h | UI-1.2.1, UI-1.2.2 | §7.9 |
+| UI-2.8.4 | Build `NotificationSection` — grouped by time (Today, Yesterday, Earlier) | 1h | UI-2.8.3 | §7.9 |
+| UI-2.8.5 | Assemble Notifications page with filters and time-grouped sections | 2h | UI-2.8.1–4 | §7.9 |
+
+#### UI-2.9 Onboarding/Tutorial Screen
+
+| Task | Description | Time | Deps | Guide Ref |
+|------|-------------|------|------|-----------|
+| UI-2.9.1 | Build `OnboardingProgress` — progress bar + step dots (5 steps) | 1h | UI-1.2.3 | §7.5 |
+| UI-2.9.2 | Build Step 1: Welcome — platform intro with animation | 1h | UI-1.2.2 | §7.5 |
+| UI-2.9.3 | Build Step 2: ThemePicker — interactive theme selection that changes UI live | 2h | UI-1.3.4 | §7.5 |
+| UI-2.9.4 | Build Step 3: XPDemo — clickable buttons that earn demo XP with bar animation | 2h | UI-1.2.1, UI-1.2.3 | §7.5 |
+| UI-2.9.5 | Build Step 4: BattleDemo — attack button simulation with damage numbers | 2h | UI-1.2.1 | §7.5 |
+| UI-2.9.6 | Build Step 5: Ready — "Learn and Become The Strongest!" with CTA button | 1h | UI-1.2.1 | §7.5 |
+| UI-2.9.7 | Assemble Onboarding flow with step navigation and completion redirect | 2h | UI-2.9.1–6 | §7.5 |
+
+**UI-2 Total: ~95 hours | 43 tasks**
+
+---
+
+### UI-3: Polish & Testing (Week 4-5)
+
+#### UI-3.1 Animations
+
+| Task | Description | Time | Deps | Guide Ref |
+|------|-------------|------|------|-----------|
+| UI-3.1.1 | Add Framer Motion page transitions (fadeIn, slideUp, scaleIn) | 2h | UI-2 | §9.1 |
+| UI-3.1.2 | Add card hover effects (translateY -4px, shadow elevation) | 1h | UI-2 | §9.3 |
+| UI-3.1.3 | Add XP gain popup animations (scale + fade + float up) | 2h | UI-2 | §9 |
+| UI-3.1.4 | Add Mythic rarity rainbow glow animation (conic gradient spin) | 1h | UI-1.2.7 | §8.3 |
+| UI-3.1.5 | Add notification slide-in animations (translateX) | 1h | UI-2.8.3 | §9.3 |
+
+#### UI-3.2 Responsive Design
+
+| Task | Description | Time | Deps | Guide Ref |
+|------|-------------|------|------|-----------|
+| UI-3.2.1 | Make Dashboard responsive (6→3→2 column stat grids, stack content) | 2h | UI-2.1.7 | §10.2 |
+| UI-3.2.2 | Make all screens responsive for tablet (768px breakpoint) | 3h | UI-2 | §10.2 |
+| UI-3.2.3 | Make all screens responsive for mobile (640px breakpoint) | 3h | UI-2 | §10.2 |
+| UI-3.2.4 | Implement MobileNav bottom bar for mobile devices | 2h | UI-1.3.3 | §10.3 |
+
+#### UI-3.3 Theme Testing
+
+| Task | Description | Time | Deps | Guide Ref |
+|------|-------------|------|------|-----------|
+| UI-3.3.1 | Test all screens in Dark Fantasy theme — verify contrast and accent colors | 1h | UI-2 | §5.2 |
+| UI-3.3.2 | Test all screens in Ghibli theme — verify text visibility on light background | 1h | UI-2 | §5.2 |
+| UI-3.3.3 | Test all screens in Bright theme — verify button text and contrast | 1h | UI-2 | §5.2 |
+| UI-3.3.4 | Test all screens in Pixel theme — verify monospace font rendering | 1h | UI-2 | §5.2 |
+| UI-3.3.5 | Test all screens in Cyberpunk theme — verify scanlines, glitch, clip-path effects | 1h | UI-2 | §5.2 |
+| UI-3.3.6 | Fix any theme-specific bugs found during testing | 2h | UI-3.3.1–5 | — |
+
+**UI-3 Total: ~24 hours | 13 tasks**
+
+---
+
+### UI Redesign Summary
+
+| Phase | Tasks | Estimated Hours |
+|-------|-------|----------------|
+| UI-1: Foundation | 16 | ~20h |
+| UI-2: Screens | 43 | ~95h |
+| UI-3: Polish | 13 | ~24h |
+| **Total** | **72** | **~139h** |
+
+---
+
 ## Quick Links
 
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — System design
@@ -520,9 +753,11 @@ PADDLE_API_KEY=
 - [GAMIFICATION.md](./GAMIFICATION.md) — XP/Level formulas
 - [API.md](./API.md) — Endpoint reference
 - [UI_SCREENS.md](./UI_SCREENS.md) — Screen designs
+- [EDUMIND_IMPLEMENTATION_GUIDE.md](./Design/EDUMIND_IMPLEMENTATION_GUIDE.md) — Complete UI specs (5 themes, 9 screens, components)
+- [CODEBASE_OVERVIEW.md](./CODEBASE_OVERVIEW.md) — Full codebase documentation
 
 ---
 
 **Last Updated:** April 2, 2026
-**Current Phase:** 5 🟡 In Progress (9/25)
-**Overall Progress:** 136/164 (83%)
+**Current Phase:** 5 🟡 In Progress (16/25) + UI Redesign Track (0/72)
+**Overall Progress:** 143/236 (61% including UI track)
