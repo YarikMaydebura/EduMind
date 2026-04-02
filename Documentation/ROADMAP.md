@@ -8,9 +8,9 @@
 | 2 | Core Academic | 41 | 41 | ✅ Complete |
 | 3 | Gamification | 56 | 56 | ✅ Complete |
 | 4 | AI Integration | 15 | 15 | ✅ Complete |
-| 5 | Battle System | 25 | 24 | 🟡 In Progress |
+| 5 | Battle System | 57 | 33 | 🟡 In Progress |
 | 6 | Polish & Launch | 12 | 0 | 🔴 Not Started |
-| **Total** | | **164** | **151** | **92%** |
+| **Total** | | **196** | **159** | **81%** |
 
 **Legend:** ✅ Done | 🟡 In Progress | 🔴 Not Started | ⏸️ Blocked
 
@@ -287,16 +287,16 @@
 - [x] Implement skill details modal (`SkillDetailModal` — stats, requirements, learn/equip actions)
 - [x] Create skill unlock notifications (`SKILL_UNLOCKED` notification type added to schema)
 
-### 5.4 Battle Engine
-- [ ] Create battle initialization service
-- [ ] Implement turn order calculation
-- [ ] Create action processing (attack, skill, defend, item)
-- [ ] Implement damage calculation
-- [ ] Create status effect system
-- [ ] Implement HP/MP/STA tracking
-- [ ] Create win condition checking
-- [ ] Implement battle logging
-- [ ] Create reward calculation
+### 5.4 Battle Engine ✅
+- [x] Create battle initialization service (`engine.ts` — `initBattle()`, `FighterState`, `BattleState`)
+- [x] Implement turn order calculation (`determineTurnOrder()` — SPD comparison with random tiebreak)
+- [x] Create action processing (`processTurn()` — attack, skill, defend; `processAction()` dispatches by type)
+- [x] Implement damage calculation (reuses `calculateDamage()` + crit/dodge from `calculateDerivedStats()`)
+- [x] Create status effect system (BURN/POISON DoT, FREEZE skip chance, SHOCK SPD reduction, BUFF/DEBUFF stat mods)
+- [x] Implement HP/MP/STA tracking (`endTurnRegen()` — +5 MP/STA per turn, defend recovers +10 each)
+- [x] Create win condition checking (`checkWinCondition()` — HP≤0 or 30 turns → DRAW)
+- [x] Implement battle logging (`BattleLogEntry[]` — turn, actor, action, damage, crit, dodge, status, message)
+- [x] Create reward calculation (`calculateBattleRewards()` — PVP/PVE/Friendly/Boss configs with win/lose/draw XP+KP)
 
 ### 5.5 Battle UI
 - [ ] Create battle arena component
@@ -328,7 +328,7 @@
 - [ ] Implement item usage
 - [ ] Create equipment system
 
-**Phase 5 Completion:** 24/25 tasks (5.1 ✅, 5.2 ✅, 5.3 ✅)
+**Phase 5 Completion:** 33/57 tasks (5.1 ✅, 5.2 ✅, 5.3 ✅, 5.4 ✅)
 
 ---
 
@@ -759,5 +759,5 @@ PADDLE_API_KEY=
 ---
 
 **Last Updated:** April 2, 2026
-**Current Phase:** 5 🟡 In Progress (24/25) + UI Redesign Track (0/72)
-**Overall Progress:** 151/236 (64% including UI track)
+**Current Phase:** 5 🟡 In Progress (33/57) + UI Redesign Track (0/72)
+**Overall Progress:** 159/268 (59% including UI track)

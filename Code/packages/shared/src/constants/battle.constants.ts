@@ -1,4 +1,4 @@
-import type { BattleAttributes, SubjectConversion } from '../types/battle.types';
+import type { BattleAttributes, BattleRewardConfig, SubjectConversion } from '../types/battle.types';
 
 export const BASE_STATS: BattleAttributes = {
   HP: 100,
@@ -87,3 +87,18 @@ export const STA_REGEN_PER_TURN = 5;
 export const DEFEND_DEF_BONUS = 0.5;
 export const DEFEND_MP_RECOVERY = 10;
 export const DEFEND_STA_RECOVERY = 10;
+
+export const BATTLE_REWARDS: Record<string, BattleRewardConfig> = {
+  PVP: { winXP: 75, winKP: 75, loseXP: 20, loseKP: 20, drawXP: 35, drawKP: 35 },
+  PVE_DUNGEON: { winXP: 50, winKP: 50, loseXP: 15, loseKP: 10, drawXP: 25, drawKP: 20 },
+  FRIENDLY: { winXP: 25, winKP: 25, loseXP: 10, loseKP: 10, drawXP: 15, drawKP: 15 },
+  BOSS_RAID: { winXP: 150, winKP: 100, loseXP: 30, loseKP: 20, drawXP: 50, drawKP: 40 },
+};
+
+export const STATUS_EFFECT_DAMAGE: Record<string, number> = {
+  BURN: 0.05,    // 5% max HP per turn
+  POISON: 0.03,  // 3% max HP per turn
+};
+
+export const FREEZE_SKIP_CHANCE = 0.25;  // 25% chance to skip turn when frozen
+export const SHOCK_SPD_REDUCTION = 0.20; // -20% SPD when shocked
