@@ -133,6 +133,28 @@ export async function awardXP({
     });
   }
 
+  // 4.5. Check for battle awakening trigger (Level 5)
+  let awakeningTriggered = false;
+  if (newLevel >= 5 && previousLevel < 5) {
+    const existingCharacter = await tx.battleCharacter.findUnique({
+      where: { studentId },
+      select: { id: true },
+    });
+
+    if (!existingCharacter) {
+      awakeningTriggered = true;
+      await tx.notification.create({
+        data: {
+          userId,
+          type: 'BATTLE_AWAKENING',
+          title: 'Character Awakening Available!',
+          message: 'You have reached Level 5! It is time to awaken your battle character.',
+          actionUrl: '/s/awakening',
+        },
+      });
+    }
+  }
+
   // 5. Recalculate grade
   const gradeResult = await recalculateGrade({
     tx,
@@ -186,5 +208,6 @@ export async function awardXP({
     achievementsUnlocked,
     streakDays: streakResult.newStreakDays,
     streakMilestoneXP: streakResult.milestoneXP,
+    awakeningTriggered,
   };
 }

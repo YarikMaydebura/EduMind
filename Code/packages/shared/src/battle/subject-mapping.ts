@@ -1,0 +1,66 @@
+/**
+ * Maps granular Subject enum values to the conversion categories
+ * used by SUBJECT_CONVERSIONS in battle.constants.ts.
+ */
+const SUBJECT_CATEGORY_MAP: Record<string, string> = {
+  // Core Academic → MATHEMATICS
+  MATHEMATICS: 'MATHEMATICS',
+
+  // Sciences → SCIENCE
+  PHYSICS: 'SCIENCE',
+  CHEMISTRY: 'SCIENCE',
+  BIOLOGY: 'SCIENCE',
+  PSYCHOLOGY: 'SCIENCE',
+
+  // Languages → LANGUAGES
+  ENGLISH: 'LANGUAGES',
+  GERMAN: 'LANGUAGES',
+  FRENCH: 'LANGUAGES',
+  SPANISH: 'LANGUAGES',
+  JAPANESE: 'LANGUAGES',
+  CHINESE: 'LANGUAGES',
+  RUSSIAN: 'LANGUAGES',
+  LATIN: 'LANGUAGES',
+  UKRAINIAN: 'LANGUAGES',
+  DUTCH: 'LANGUAGES',
+
+  // Social Studies → SOCIAL_STUDIES
+  HISTORY: 'SOCIAL_STUDIES',
+  GEOGRAPHY: 'SOCIAL_STUDIES',
+  ECONOMICS: 'SOCIAL_STUDIES',
+  SOCIOLOGY: 'SOCIAL_STUDIES',
+  PHILOSOPHY: 'SOCIAL_STUDIES',
+  RELIGIOUS_STUDIES: 'SOCIAL_STUDIES',
+
+  // Arts → ARTS
+  ART: 'ARTS',
+  MUSIC: 'ARTS',
+  DRAMA: 'ARTS',
+  DANCE: 'ARTS',
+  PHOTOGRAPHY: 'ARTS',
+
+  // Technical → COMPUTER_SCIENCE
+  COMPUTER_SCIENCE: 'COMPUTER_SCIENCE',
+  ENGINEERING: 'COMPUTER_SCIENCE',
+  ROBOTICS: 'COMPUTER_SCIENCE',
+  WEB_DEVELOPMENT: 'COMPUTER_SCIENCE',
+  APP_DEVELOPMENT: 'COMPUTER_SCIENCE',
+  DATA_SCIENCE: 'COMPUTER_SCIENCE',
+
+  // Physical → PHYSICAL_EDUCATION
+  PHYSICAL_EDUCATION: 'PHYSICAL_EDUCATION',
+  HEALTH: 'PHYSICAL_EDUCATION',
+
+  // Business → mapped to SOCIAL_STUDIES (closest fit)
+  ACCOUNTING: 'MATHEMATICS',
+  MARKETING: 'SOCIAL_STUDIES',
+  ENTREPRENEURSHIP: 'SOCIAL_STUDIES',
+};
+
+/**
+ * Get the battle stat conversion category for a Subject enum value.
+ * Returns null if the subject has no mapping.
+ */
+export function getSubjectCategory(subject: string): string | null {
+  return SUBJECT_CATEGORY_MAP[subject] ?? null;
+}

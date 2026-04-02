@@ -23,6 +23,7 @@ export async function GET() {
         streakDays: true,
         longestStreak: true,
         currentGrade: true,
+        battleCharacter: { select: { id: true } },
       },
     });
 
@@ -122,6 +123,7 @@ export async function GET() {
           needed: levelProgress.needed,
           progress: levelProgress.progress,
         },
+        hasCharacter: !!student.battleCharacter,
         globalGradeScore: Math.round(globalGradeScore * 10) / 10,
         classProfiles: classProfilesData,
         achievementsSummary: {

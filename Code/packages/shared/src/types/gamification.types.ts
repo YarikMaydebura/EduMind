@@ -68,4 +68,5 @@ export interface AwardXPResult {
   achievementsUnlocked: UnlockedAchievementInfo[];
   streakDays: number;
   streakMilestoneXP: number;
+  awakeningTriggered: boolean;
 }

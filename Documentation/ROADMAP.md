@@ -8,9 +8,9 @@
 | 2 | Core Academic | 41 | 41 | ✅ Complete |
 | 3 | Gamification | 56 | 56 | ✅ Complete |
 | 4 | AI Integration | 15 | 15 | ✅ Complete |
-| 5 | Battle System | 25 | 0 | 🔴 Not Started |
+| 5 | Battle System | 25 | 9 | 🟡 In Progress |
 | 6 | Polish & Launch | 12 | 0 | 🔴 Not Started |
-| **Total** | | **164** | **127** | **77%** |
+| **Total** | | **164** | **136** | **83%** |
 
 **Legend:** ✅ Done | 🟡 In Progress | 🔴 Not Started | ⏸️ Blocked
 
@@ -257,18 +257,18 @@
 
 ## Phase 5: Battle System (Week 9-12)
 
-### 5.1 Character System
-- [ ] Create BattleCharacter model integration
-- [ ] Implement character creation API
-- [ ] Create awakening flow (Level 5 trigger)
-- [ ] Implement theme selection UI
-- [ ] Create class proposal algorithm
-- [ ] Implement class selection UI
-- [ ] Create character stats calculation service
-- [ ] Implement character profile page
+### 5.1 Character System ✅
+- [x] Create BattleCharacter model integration (added `BATTLE_AWAKENING` to NotificationType, `pnpm db:generate`)
+- [x] Implement character creation API (`/api/characters/awaken`, `/api/characters/me`, `/api/characters/classes`, `/api/characters/propose`)
+- [x] Create awakening flow (Level 5 trigger in `award-xp.ts` → creates `BATTLE_AWAKENING` notification)
+- [x] Implement theme selection UI (6-theme card grid in awakening wizard with Framer Motion)
+- [x] Create class proposal algorithm (`propose-classes.ts` — scores Common classes against student stat profile)
+- [x] Implement class selection UI (4 class cards with match scores, passive badges, confirmation step)
+- [x] Create character stats calculation service (`getStudentSubjectAverages()` + `calculateBattleStats()` from shared)
+- [x] Implement character profile page (`/s/character` — stats bars, derived stats, battle record, KP, class info)
 
 ### 5.2 Class System
-- [ ] Seed all 96 classes to database
+- [x] Seed all 96 classes to database (`seed-character-classes.ts` — 16 per theme × 6 themes)
 - [ ] Create class unlock checking service
 - [ ] Implement class details API
 - [ ] Create class preview component
@@ -328,7 +328,7 @@
 - [ ] Implement item usage
 - [ ] Create equipment system
 
-**Phase 5 Completion:** ___/25 tasks
+**Phase 5 Completion:** 9/25 tasks (5.1 complete, 5.2 partial)
 
 ---
 
@@ -453,6 +453,29 @@
 **Blockers:**
 - None
 
+### Session 3 — Date: March 28-31, 2026
+**Completed:**
+- Phase 4 completion (3 remaining tasks): `withAiRoute` middleware with rate limiting + cost tracking + AiGenerationLog, conversation history persistence (per-subject, max 20 messages), per-student daily limit (50/day)
+- Phase 5.1 (Character System) — all 8 tasks:
+  - Schema: added `BATTLE_AWAKENING` to NotificationType enum
+  - Seed: 96 character classes (16 per theme × 6 themes) with passives and requirements
+  - Shared: subject→category mapping for 30+ subjects, Zod awakening schema
+  - Server: class proposal algorithm, theme/stat config helpers
+  - API: 4 character endpoints (me, awaken, classes, propose)
+  - Trigger: Level 5 awakening notification in `awardXP()`
+  - UI: Multi-step awakening wizard (theme → class → confirm → celebrate)
+  - UI: Character profile page with animated stat bars, derived stats, battle record
+  - UI: Awakening banner on student dashboard, Character nav in sidebar
+- Created `CODEBASE_OVERVIEW.md` — comprehensive documentation of all 42 models, 42 API routes, pages, components, and data flows
+
+**Next Steps:**
+- Phase 5.2 remaining: class unlock checking, evolution system
+- Phase 5.3: Skill system
+- Phase 5.4-5.7: Battle engine, UI, PvP, shop
+
+**Blockers:**
+- None
+
 ---
 
 ## Environment Variables
@@ -500,6 +523,6 @@ PADDLE_API_KEY=
 
 ---
 
-**Last Updated:** March 28, 2026
-**Current Phase:** 4 ✅ Complete
-**Overall Progress:** 127/164 (77%)
+**Last Updated:** April 2, 2026
+**Current Phase:** 5 🟡 In Progress (9/25)
+**Overall Progress:** 136/164 (83%)

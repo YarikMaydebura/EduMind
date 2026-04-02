@@ -6,3 +6,4 @@ export * from './quiz.schema';
 export * from './lesson.schema';
 export * from './tenant.schema';
 export * from './user.schema';
+export * from './character.schema';

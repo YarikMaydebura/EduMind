@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { hashSync } from 'bcryptjs';
 
+import { seedCharacterClasses } from './seed-character-classes';
+
 const prisma = new PrismaClient();
 
 /**
@@ -281,6 +283,9 @@ async function main() {
   console.log('  Student3: student3@test.com (Carol - highest XP)');
   console.log('  Student4: student4@test.com (Dave - lowest XP)');
   console.log('  Student5: student5@test.com (Eve)');
+
+  // Seed character classes
+  await seedCharacterClasses(prisma);
 }
 
 main()

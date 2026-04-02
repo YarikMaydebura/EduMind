@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { ActivityFeed } from '@/components/gamification/activity-feed';
+import { AwakeningBanner } from '@/components/gamification/awakening-banner';
 import { GradeDisplay } from '@/components/gamification/grade-display';
 import { LevelBadge } from '@/components/gamification/level-badge';
 import { LevelProgress } from '@/components/gamification/level-progress';
@@ -29,6 +30,7 @@ interface XPData {
   currentGrade: string;
   streakDays: number;
   longestStreak: number;
+  hasCharacter: boolean;
   globalGradeScore: number;
   levelProgress: {
     current: number;
@@ -97,6 +99,13 @@ export function StudentDashboard() {
   return (
     <MotionPage className="container py-8">
       <h1 className="mb-6 text-3xl font-bold">Dashboard</h1>
+
+      {/* Awakening banner */}
+      {xpData.overallLevel >= 5 && !xpData.hasCharacter && (
+        <div className="mb-6">
+          <AwakeningBanner />
+        </div>
+      )}
 
       {/* Top row: Level + Progress */}
       <Card className="mb-6">

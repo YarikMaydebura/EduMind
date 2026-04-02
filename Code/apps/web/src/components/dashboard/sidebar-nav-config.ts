@@ -6,6 +6,7 @@ import {
   Medal,
   Settings,
   Sparkles,
+  Swords,
   Trophy,
   Users,
   type LucideIcon,
@@ -24,6 +25,7 @@ export const NAV_ITEMS: Record<string, NavItem[]> = {
     { href: '/s/tutor', label: 'AI Tutor', icon: Bot },
     { href: '/s/leaderboard', label: 'Leaderboard', icon: Medal },
     { href: '/s/achievements', label: 'Achievements', icon: Trophy },
+    { href: '/s/character', label: 'Character', icon: Swords },
     { href: '/s/settings', label: 'Settings', icon: Settings },
   ],
   TEACHER: [

@@ -150,6 +150,7 @@ enum NotificationType {
   MESSAGE
   SYSTEM
   PARENT_ALERT
+  BATTLE_AWAKENING
 }
 
 enum ActivityType {
