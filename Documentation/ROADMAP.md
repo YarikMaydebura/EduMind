@@ -8,9 +8,9 @@
 | 2 | Core Academic | 41 | 41 | ✅ Complete |
 | 3 | Gamification | 56 | 56 | ✅ Complete |
 | 4 | AI Integration | 15 | 15 | ✅ Complete |
-| 5 | Battle System | 57 | 33 | 🟡 In Progress |
+| 5 | Battle System | 57 | 42 | 🟡 In Progress |
 | 6 | Polish & Launch | 12 | 0 | 🔴 Not Started |
-| **Total** | | **196** | **159** | **81%** |
+| **Total** | | **196** | **168** | **86%** |
 
 **Legend:** ✅ Done | 🟡 In Progress | 🔴 Not Started | ⏸️ Blocked
 
@@ -298,16 +298,16 @@
 - [x] Implement battle logging (`BattleLogEntry[]` — turn, actor, action, damage, crit, dodge, status, message)
 - [x] Create reward calculation (`calculateBattleRewards()` — PVP/PVE/Friendly/Boss configs with win/lose/draw XP+KP)
 
-### 5.5 Battle UI
-- [ ] Create battle arena component
-- [ ] Implement character display (HP/MP/STA bars)
-- [ ] Create action selection UI
-- [ ] Implement skill selection
-- [ ] Create attack animations
-- [ ] Implement damage numbers
-- [ ] Create status effect indicators
-- [ ] Implement battle log display
-- [ ] Create victory/defeat screens
+### 5.5 Battle UI ✅
+- [x] Create battle arena component (`/s/battles` hub + `/s/battles/[id]` active battle page)
+- [x] Implement character display (`FighterPanel` — HP/MP/STA animated bars, name, defending indicator)
+- [x] Create action selection UI (`ActionBar` — Attack/Defend buttons + equipped skill grid)
+- [x] Implement skill selection (skill buttons with tooltips: name, type icon, cost, cooldown, disabled states)
+- [x] Create attack animations (`DamageNumbers` — floating numbers with Framer Motion AnimatePresence)
+- [x] Implement damage numbers (red for damage, green for healing, amber for crits, float-up fade)
+- [x] Create status effect indicators (`StatusEffectBadge` — BURN/POISON/FREEZE/SHOCK/BUFF/DEBUFF icons + turns)
+- [x] Implement battle log display (`BattleLog` — scrollable, color-coded, auto-scroll, staggered entry)
+- [x] Create victory/defeat screens (`BattleResult` — animated reveal: icon, title, XP/KP rewards, action buttons)
 
 ### 5.6 PvP System
 - [ ] Create matchmaking API
@@ -328,7 +328,7 @@
 - [ ] Implement item usage
 - [ ] Create equipment system
 
-**Phase 5 Completion:** 33/57 tasks (5.1 ✅, 5.2 ✅, 5.3 ✅, 5.4 ✅)
+**Phase 5 Completion:** 42/57 tasks (5.1 ✅, 5.2 ✅, 5.3 ✅, 5.4 ✅, 5.5 ✅)
 
 ---
 
@@ -759,5 +759,5 @@ PADDLE_API_KEY=
 ---
 
 **Last Updated:** April 2, 2026
-**Current Phase:** 5 🟡 In Progress (33/57) + UI Redesign Track (0/72)
-**Overall Progress:** 159/268 (59% including UI track)
+**Current Phase:** 5 🟡 In Progress (42/57) + UI Redesign Track (0/72)
+**Overall Progress:** 168/268 (63% including UI track)

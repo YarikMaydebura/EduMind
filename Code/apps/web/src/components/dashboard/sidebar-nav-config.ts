@@ -1,6 +1,7 @@
 import {
   BookOpen,
   Bot,
+  Flame,
   GraduationCap,
   LayoutDashboard,
   Medal,
@@ -26,6 +27,7 @@ export const NAV_ITEMS: Record<string, NavItem[]> = {
     { href: '/s/leaderboard', label: 'Leaderboard', icon: Medal },
     { href: '/s/achievements', label: 'Achievements', icon: Trophy },
     { href: '/s/character', label: 'Character', icon: Swords },
+    { href: '/s/battles', label: 'Battles', icon: Flame },
     { href: '/s/settings', label: 'Settings', icon: Settings },
   ],
   TEACHER: [
