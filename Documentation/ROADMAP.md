@@ -8,9 +8,9 @@
 | 2 | Core Academic | 41 | 41 | ✅ Complete |
 | 3 | Gamification | 56 | 56 | ✅ Complete |
 | 4 | AI Integration | 15 | 15 | ✅ Complete |
-| 5 | Battle System | 57 | 42 | 🟡 In Progress |
+| 5 | Battle System | 57 | 49 | 🟡 In Progress |
 | 6 | Polish & Launch | 12 | 0 | 🔴 Not Started |
-| **Total** | | **196** | **168** | **86%** |
+| **Total** | | **196** | **175** | **89%** |
 
 **Legend:** ✅ Done | 🟡 In Progress | 🔴 Not Started | ⏸️ Blocked
 
@@ -309,14 +309,14 @@
 - [x] Implement battle log display (`BattleLog` — scrollable, color-coded, auto-scroll, staggered entry)
 - [x] Create victory/defeat screens (`BattleResult` — animated reveal: icon, title, XP/KP rewards, action buttons)
 
-### 5.6 PvP System
-- [ ] Create matchmaking API
-- [ ] Implement battle request system
-- [ ] Create battle queue
-- [ ] Implement daily limits tracking
-- [ ] Create cooldown enforcement
-- [ ] Implement PvP rankings
-- [ ] Create battle history page
+### 5.6 PvP System ✅
+- [x] Create matchmaking API (`POST /api/battles/pvp/matchmake` — find random opponent from same tenant, ±5 levels)
+- [x] Implement battle request system (`POST /api/battles/pvp/start` — async PvP using real opponent stats with AI actions)
+- [x] Create battle queue (`findPvpOpponent()` — random selection from 20 eligible candidates)
+- [x] Implement daily limits tracking (`checkAndResetPvpDaily()` — auto-reset at midnight, `pvpBattlesToday` counter)
+- [x] Create cooldown enforcement (5-minute cooldown between PvP battles via `lastBattleAt`)
+- [x] Implement PvP rankings (`GET /api/battles/rankings` — top 50 by wins, with win rate and KP)
+- [x] Create battle history page (`/s/battles/history` — full history with type filters, stats summary)
 
 ### 5.7 Shop & Economy
 - [ ] Seed all items to database
@@ -328,7 +328,7 @@
 - [ ] Implement item usage
 - [ ] Create equipment system
 
-**Phase 5 Completion:** 42/57 tasks (5.1 ✅, 5.2 ✅, 5.3 ✅, 5.4 ✅, 5.5 ✅)
+**Phase 5 Completion:** 49/57 tasks (5.1 ✅, 5.2 ✅, 5.3 ✅, 5.4 ✅, 5.5 ✅, 5.6 ✅)
 
 ---
 
@@ -759,5 +759,5 @@ PADDLE_API_KEY=
 ---
 
 **Last Updated:** April 2, 2026
-**Current Phase:** 5 🟡 In Progress (42/57) + UI Redesign Track (0/72)
-**Overall Progress:** 168/268 (63% including UI track)
+**Current Phase:** 5 🟡 In Progress (49/57) + UI Redesign Track (0/72)
+**Overall Progress:** 175/268 (65% including UI track)

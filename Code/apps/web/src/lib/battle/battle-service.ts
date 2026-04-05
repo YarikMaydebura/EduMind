@@ -255,3 +255,206 @@ export async function forfeitBattle(battleId: string, characterId: string) {
 
   return { rewards };
 }
+
+// ─── PvP Daily Reset ─────────────────────────────────────────────────────────
+
+async function checkAndResetPvpDaily(characterId: string) {
+  const character = await db.battleCharacter.findUnique({
+    where: { id: characterId },
+    select: { pvpBattlesToday: true, lastDailyReset: true },
+  });
+
+  if (!character) return;
+
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+
+  if (character.lastDailyReset < today) {
+    await db.battleCharacter.update({
+      where: { id: characterId },
+      data: { pvpBattlesToday: 0, lastDailyReset: new Date() },
+    });
+  }
+}
+
+// ─── Start PvP Battle ────────────────────────────────────────────────────────
+
+export async function startPvpBattle(
+  studentId: string,
+  opponentCharacterId: string,
+) {
+  // Load player character
+  const character = await db.battleCharacter.findUnique({
+    where: { studentId },
+    include: {
+      student: { select: { user: { select: { firstName: true } }, overallLevel: true, userId: true } },
+      class: { select: { name: true } },
+      equippedSkills: {
+        where: { isEquipped: true },
+        include: {
+          skill: {
+            select: {
+              id: true, name: true, type: true,
+              mpCost: true, staCost: true, power: true, hitCount: true, cooldown: true,
+              effects: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!character) throw new Error('No battle character found');
+
+  // Daily reset check
+  await checkAndResetPvpDaily(character.id);
+
+  // Re-fetch after possible reset
+  const freshChar = await db.battleCharacter.findUnique({
+    where: { id: character.id },
+    select: { pvpBattlesToday: true, lastBattleAt: true },
+  });
+
+  // Check PvP daily limit
+  const pvpLimits = BATTLE_LIMITS.pvp;
+  if ((freshChar?.pvpBattlesToday ?? 0) >= pvpLimits.maxPerDay) {
+    throw new Error(`PvP daily limit reached (${pvpLimits.maxPerDay}/day)`);
+  }
+
+  // Check cooldown
+  if (freshChar?.lastBattleAt && pvpLimits.cooldownMinutes > 0) {
+    const cooldownMs = pvpLimits.cooldownMinutes * 60 * 1000;
+    const elapsed = Date.now() - freshChar.lastBattleAt.getTime();
+    if (elapsed < cooldownMs) {
+      const remaining = Math.ceil((cooldownMs - elapsed) / 1000);
+      throw new Error(`PvP cooldown: ${remaining}s remaining`);
+    }
+  }
+
+  // Load opponent character
+  const opponent = await db.battleCharacter.findUnique({
+    where: { id: opponentCharacterId },
+    include: {
+      student: { select: { user: { select: { firstName: true } }, overallLevel: true, userId: true } },
+      class: { select: { name: true } },
+      equippedSkills: {
+        where: { isEquipped: true },
+        include: {
+          skill: {
+            select: {
+              id: true, name: true, type: true,
+              mpCost: true, staCost: true, power: true, hitCount: true, cooldown: true,
+              effects: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!opponent) throw new Error('Opponent not found');
+  if (opponent.id === character.id) throw new Error('Cannot battle yourself');
+
+  // Build fighter states
+  const buildFighter = (char: typeof character): import('@edumind/shared').FighterState => ({
+    id: char.id,
+    name: `${char.student.user.firstName} (${char.class.name})`,
+    hp: char.maxHp, maxHp: char.maxHp,
+    mp: char.maxMp, maxMp: char.maxMp,
+    sta: char.maxSta, maxSta: char.maxSta,
+    atk: char.atk, def: char.def, spd: char.spd, lck: char.lck,
+    skills: char.equippedSkills.map((cs) => ({
+      id: cs.skill.id, name: cs.skill.name,
+      type: cs.skill.type as import('@edumind/shared').EquippedSkillInfo['type'],
+      mpCost: cs.skill.mpCost, staCost: cs.skill.staCost,
+      power: cs.skill.power, hitCount: cs.skill.hitCount, cooldown: cs.skill.cooldown,
+      effects: (cs.skill.effects ?? {}) as Record<string, unknown>,
+    })),
+    cooldowns: {}, statusEffects: [], isDefending: false,
+  });
+
+  const player = buildFighter(character);
+  const opponentFighter = buildFighter(opponent);
+
+  const battleState = initBattle(player, opponentFighter);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const battle = await db.battle.create({
+    data: {
+      type: 'PVP',
+      status: 'BATTLE_IN_PROGRESS',
+      player1Id: character.id,
+      player2Id: opponent.id,
+      player1Stats: JSON.parse(JSON.stringify(player)) as any,
+      player2Stats: JSON.parse(JSON.stringify(opponentFighter)) as any,
+      battleLog: JSON.parse(JSON.stringify(battleState)) as any,
+      currentTurn: 1,
+    },
+  });
+
+  // Update PvP tracking
+  await db.battleCharacter.update({
+    where: { id: character.id },
+    data: {
+      pvpBattlesToday: { increment: 1 },
+      lastBattleAt: new Date(),
+    },
+  });
+
+  return { battleId: battle.id, state: battleState, opponent: { name: opponentFighter.name, id: opponent.id } };
+}
+
+// ─── Matchmaking ─────────────────────────────────────────────────────────────
+
+export async function findPvpOpponent(studentId: string, tenantId: string) {
+  const myCharacter = await db.battleCharacter.findUnique({
+    where: { studentId },
+    select: { id: true, student: { select: { overallLevel: true } } },
+  });
+
+  if (!myCharacter) throw new Error('No battle character');
+
+  const myLevel = myCharacter.student.overallLevel;
+
+  // Find opponents from same tenant, similar level, not self
+  const candidates = await db.battleCharacter.findMany({
+    where: {
+      student: {
+        user: { tenantId },
+        overallLevel: { gte: Math.max(1, myLevel - 5), lte: myLevel + 5 },
+      },
+      id: { not: myCharacter.id },
+    },
+    select: {
+      id: true,
+      theme: true,
+      maxHp: true,
+      atk: true,
+      def: true,
+      spd: true,
+      battlesWon: true,
+      battlesLost: true,
+      student: { select: { user: { select: { firstName: true } }, overallLevel: true } },
+      class: { select: { name: true, rarity: true } },
+    },
+    take: 20,
+  });
+
+  if (candidates.length === 0) throw new Error('No opponents available');
+
+  // Pick random opponent
+  const opponent = candidates[Math.floor(Math.random() * candidates.length)]!;
+  const totalBattles = opponent.battlesWon + opponent.battlesLost;
+
+  return {
+    id: opponent.id,
+    name: opponent.student.user.firstName,
+    level: opponent.student.overallLevel,
+    className: opponent.class.name,
+    classRarity: opponent.class.rarity,
+    theme: opponent.theme,
+    stats: { hp: opponent.maxHp, atk: opponent.atk, def: opponent.def, spd: opponent.spd },
+    winRate: totalBattles > 0 ? Math.round((opponent.battlesWon / totalBattles) * 100) : 0,
+    battlesWon: opponent.battlesWon,
+  };
+}

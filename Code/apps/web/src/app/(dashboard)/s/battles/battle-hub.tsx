@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Flame, Loader2, Shield, Swords, Trophy } from 'lucide-react';
+import { Crown, Flame, History, Loader2, Shield, Swords, Trophy, Users } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -24,6 +25,10 @@ export function BattleHub() {
   const [history, setHistory] = useState<BattleHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isStarting, setIsStarting] = useState<string | null>(null);
+  const [pvpOpponent, setPvpOpponent] = useState<{
+    id: string; name: string; level: number; className: string; winRate: number;
+  } | null>(null);
+  const [isFindingOpponent, setIsFindingOpponent] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -58,6 +63,45 @@ export function BattleHub() {
     }
   }
 
+  async function findOpponent() {
+    setIsFindingOpponent(true);
+    try {
+      const res = await fetch('/api/battles/pvp/matchmake', { method: 'POST' });
+      const json = await res.json();
+      if (json.success) {
+        setPvpOpponent(json.data);
+      } else {
+        toast.error(json.message || 'No opponents available');
+      }
+    } catch {
+      toast.error('Failed to find opponent');
+    } finally {
+      setIsFindingOpponent(false);
+    }
+  }
+
+  async function startPvp() {
+    if (!pvpOpponent) return;
+    setIsStarting('PVP');
+    try {
+      const res = await fetch('/api/battles/pvp/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ opponentId: pvpOpponent.id }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        router.push(`/s/battles/${json.data.battleId}`);
+      } else {
+        toast.error(json.message || 'Failed to start PvP');
+      }
+    } catch {
+      toast.error('Something went wrong');
+    } finally {
+      setIsStarting(null);
+    }
+  }
+
   const resultConfig = {
     WIN: { color: 'text-green-500', bg: 'bg-green-500/10', icon: '🏆' },
     LOSS: { color: 'text-red-500', bg: 'bg-red-500/10', icon: '💀' },
@@ -79,7 +123,7 @@ export function BattleHub() {
       </div>
 
       {/* Battle mode cards */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <Card className="transition-all hover:shadow-md hover:border-primary/30">
             <CardHeader className="pb-2">
@@ -150,6 +194,78 @@ export function BattleHub() {
             </CardContent>
           </Card>
         </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <Card className="transition-all hover:shadow-md hover:border-primary/30">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 text-white">
+                  <Crown className="h-5 w-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">PvP Battle</CardTitle>
+                  <CardDescription className="text-xs">Fight real players</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex gap-2">
+                <Badge variant="secondary" className="text-xs">+75 XP</Badge>
+                <Badge variant="secondary" className="text-xs">+75 KP</Badge>
+                <Badge variant="outline" className="text-xs">5/day</Badge>
+              </div>
+              {pvpOpponent ? (
+                <div className="space-y-2">
+                  <div className="rounded-lg border bg-muted/30 p-2 text-center">
+                    <p className="text-xs text-muted-foreground">Opponent found</p>
+                    <p className="text-sm font-bold">{pvpOpponent.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Lv.{pvpOpponent.level} {pvpOpponent.className} ({pvpOpponent.winRate}% WR)
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      className="flex-1"
+                      size="sm"
+                      onClick={startPvp}
+                      disabled={!!isStarting}
+                    >
+                      {isStarting === 'PVP' ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Swords className="mr-1 h-3.5 w-3.5" />}
+                      Fight!
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setPvpOpponent(null)}>
+                      Skip
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={findOpponent}
+                  disabled={isFindingOpponent}
+                >
+                  {isFindingOpponent ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Users className="mr-2 h-4 w-4" />
+                  )}
+                  Find Opponent
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Quick links */}
+      <div className="mt-4 flex gap-2">
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/s/battles/history"><History className="mr-1 h-3.5 w-3.5" /> Full History</Link>
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => toast.info('Rankings coming soon!')}>
+          <Trophy className="mr-1 h-3.5 w-3.5" /> Rankings
+        </Button>
       </div>
 
       {/* Recent history */}
