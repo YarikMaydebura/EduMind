@@ -226,7 +226,20 @@ export async function PATCH(
         relatedId: params.id,
       });
 
-      return xpResult;
+      // Award KP for homework grading (connects academic → battle economy)
+      const kpReward = Math.round(percentage * 0.3); // 0-30 KP based on score percentage
+      const battleChar = await tx.battleCharacter.findUnique({
+        where: { studentId: params.studentId },
+        select: { id: true },
+      });
+      if (battleChar && kpReward > 0) {
+        await tx.battleCharacter.update({
+          where: { id: battleChar.id },
+          data: { knowledgePoints: { increment: kpReward } },
+        });
+      }
+
+      return { ...xpResult, kpAwarded: kpReward };
     });
 
     return NextResponse.json({

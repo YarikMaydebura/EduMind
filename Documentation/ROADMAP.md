@@ -8,9 +8,9 @@
 | 2 | Core Academic | 41 | 41 | ✅ Complete |
 | 3 | Gamification | 56 | 56 | ✅ Complete |
 | 4 | AI Integration | 15 | 15 | ✅ Complete |
-| 5 | Battle System | 57 | 49 | 🟡 In Progress |
+| 5 | Battle System | 57 | 57 | ✅ Complete |
 | 6 | Polish & Launch | 12 | 0 | 🔴 Not Started |
-| **Total** | | **196** | **175** | **89%** |
+| **Total** | | **196** | **183** | **93%** |
 
 **Legend:** ✅ Done | 🟡 In Progress | 🔴 Not Started | ⏸️ Blocked
 
@@ -318,17 +318,17 @@
 - [x] Implement PvP rankings (`GET /api/battles/rankings` — top 50 by wins, with win rate and KP)
 - [x] Create battle history page (`/s/battles/history` — full history with type filters, stats summary)
 
-### 5.7 Shop & Economy
-- [ ] Seed all items to database
-- [ ] Create KP awarding on battles
-- [ ] Implement shop API endpoints
-- [ ] Create shop UI
-- [ ] Implement purchase flow
-- [ ] Create inventory management
-- [ ] Implement item usage
-- [ ] Create equipment system
+### 5.7 Shop & Economy ✅
+- [x] Seed all items to database (`seed-items.ts` — 28 items: consumables, weapons, armor, accessories, skill books, cosmetics, special)
+- [x] Create KP awarding on battles (already done in Phase 5.4 via `calculateBattleRewards`)
+- [x] Implement shop API endpoints (`GET /api/shop` — list items with KP balance, `POST /api/shop/purchase` — buy with KP)
+- [x] Create shop UI (`/s/shop` — category tabs, item cards with buy buttons, KP balance display)
+- [x] Implement purchase flow (validate KP, deduct, create CharacterItem, log ShopTransaction, stack consumables)
+- [x] Create inventory management (`GET /api/inventory` — items grouped by equipped/consumables/equipment)
+- [x] Implement item usage (`POST /api/inventory/use` — apply consumable effects: heal HP/MP/STA, cure status)
+- [x] Create equipment system (`POST /api/inventory/equip` — weapon/armor/accessory slots on BattleCharacter)
 
-**Phase 5 Completion:** 49/57 tasks (5.1 ✅, 5.2 ✅, 5.3 ✅, 5.4 ✅, 5.5 ✅, 5.6 ✅)
+**Phase 5 Completion:** 57/57 tasks ✅ (all sub-phases complete)
 
 ---
 
@@ -759,5 +759,5 @@ PADDLE_API_KEY=
 ---
 
 **Last Updated:** April 2, 2026
-**Current Phase:** 5 🟡 In Progress (49/57) + UI Redesign Track (0/72)
-**Overall Progress:** 175/268 (65% including UI track)
+**Current Phase:** 5 ✅ Complete + Phase 6 🔴 Not Started + UI Redesign Track (0/72)
+**Overall Progress:** 183/268 (68% including UI track)

@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Medal,
   Settings,
+  ShoppingBag,
   Sparkles,
   Swords,
   Trophy,
@@ -28,6 +29,7 @@ export const NAV_ITEMS: Record<string, NavItem[]> = {
     { href: '/s/achievements', label: 'Achievements', icon: Trophy },
     { href: '/s/character', label: 'Character', icon: Swords },
     { href: '/s/battles', label: 'Battles', icon: Flame },
+    { href: '/s/shop', label: 'Shop', icon: ShoppingBag },
     { href: '/s/settings', label: 'Settings', icon: Settings },
   ],
   TEACHER: [

@@ -228,7 +228,20 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         relatedId: params.id,
       });
 
-      return { quizResult: qr, xpResult: xr };
+      // Award KP for quiz completion (connects academic → battle economy)
+      const quizKpReward = Math.round(percentage * 0.5); // 0-50 KP based on score
+      const battleChar = await tx.battleCharacter.findUnique({
+        where: { studentId: student.id },
+        select: { id: true },
+      });
+      if (battleChar && quizKpReward > 0) {
+        await tx.battleCharacter.update({
+          where: { id: battleChar.id },
+          data: { knowledgePoints: { increment: quizKpReward } },
+        });
+      }
+
+      return { quizResult: qr, xpResult: xr, kpAwarded: quizKpReward };
     });
 
     // Build response with correct answers if showCorrectAnswers is enabled
